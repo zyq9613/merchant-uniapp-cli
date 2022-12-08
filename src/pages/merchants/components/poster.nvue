@@ -1,0 +1,100 @@
+<template>
+	<view class="wrap">
+		<view class="box" ref="poster">
+			<image src="../../../static/usercenter/poster-2.png"mode="scaleToFill"/>
+			<view class="main">
+				<VueQr :text="postData" :size="300">/</VueQr>
+				<text>长按识别二维码或者分享图片</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import html2canvas from 'html2canvas';
+	import VueQr from 'vue-qr';
+	export default {
+		data() {
+			return {
+				path: ''
+			}
+		},
+		components: {VueQr},
+		props: {
+			postData: {
+				type: String,
+				default:'系统错误，请询问管理员'
+			},
+		},
+		// watch: {
+		// 	postData:function(val){
+		// 		console.log(1)
+		// 		this.canvasToImg()
+		// 	}
+		// },
+		mounted(){
+		},
+		
+		methods:{
+			canvasToImg(){
+				html2canvas(this.$refs.poster.$el).then((canvas) => {
+					this.$emit('overImg',canvas.toDataURL())
+				})
+			},
+			handlePosterTopic(e){
+				console.log(e)
+			},
+			handlePosterToPic(e){
+				this.$emit('poster',e)
+			}
+		}
+		
+	}
+</script>
+
+<style lang="scss" scoped>
+	.wrap{
+		position: absolute;
+		background-color: rgba($color: #000, $alpha: 0.6);
+		width: 100%;
+		height: 100%;
+		z-index: 10000;
+		flex-direction: row;
+		justify-content: center;
+		align-items: center;
+		left:-20000px;
+		.box{
+			width: 620rpx;
+			margin-top: -240rpx;
+			background-color: #fff;
+			border-radius: 20rpx;
+			position: relative;
+			height: 864rpx;
+
+			uni-image{
+				width: 100%;
+				height: 100%;
+				position: absolute;
+				top: 0;
+				left: 0;
+			}
+			.main{
+				position: absolute;
+				bottom: 100rpx;
+				bottom: 170rpx;
+				justify-content: center;
+				align-items: center;
+				width: 100%;
+				img{
+					width: 200rpx;
+				}
+				text{
+					font-size: 24rpx;
+					color: #333;
+					margin-top: 10rpx;
+				}
+			}
+		}
+	}
+	
+</style>

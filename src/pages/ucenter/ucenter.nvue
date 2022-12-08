@@ -1,66 +1,208 @@
 <template>
-	<view class="center">
-		<view class="logo" @click="goLogin" :hover-class="!login ? 'logo-hover' : ''">
-			<image class="logo-img" :src="login ? uerInfo.avatarUrl :avatarUrl"></image>
-			<view class="logo-title">
-				<text class="uer-name">Hi，{{login ? uerInfo.name : '您未登录'}}</text>
-				<text class="go-login-navigat-arrow navigat-arrow" v-if="!login">&#xe65e;</text>
+	<view class="page">
+		<view class="">
+			<view class="top-group">
+				<image class="top-background-color" src="../../static/top_background.png"></image>
+				<view class="user-info-group">
+			        <image :src="userInfo.ico" class="logo-img" v-if="userInfo.ico" @click="toUserDetail"></image>
+					<image src="../../static/icon_default_avatar.png" class="logo-img" @click="toUserDetail" v-else></image>
+			
+					<view class="logo-title" @click="navigateTo('udetail')">
+						<text class="uer-name" v-if="userInfo.pid">上级:{{userInfo.pname}}(ID:{{userInfo.pid}})</text>
+						<text class="uer-name">{{userInfo.username}}(ID:{{userInfo.id}})</text>
+						<text class="uer-name" v-if="userInfo.accCode">账户：{{userInfo.accCode}}</text>
+						<text class="uer-name" v-else>账户：暂未绑定手机号</text>
+					</view>
+					<image src="../../static/icon_login_more.png" mode="aspectFit" class="icon-user-more"
+						@click="navigateTo('udetail')"></image>
+				</view>
+				<view class="acount-group">
+					<view class="wallet-group">
+						<view class="wallet-item">
+							<text class="wallet-value">{{userAccount.money | toPsyt}}</text>
+							<text class="wallet-title">红包</text>
+						</view>
+						<view class="wallet-divider"></view>
+						<view class="wallet-item">
+							<text class="wallet-value">{{userAccount.integral}}</text>
+							<text class="wallet-title">积分</text>
+						</view>
+					</view>
+					<view class="income-group">
+						<view class="income-item" @click="navigateTo('bag')">
+							<image class="income-image" mode="aspectFit" src="../../static/icon_red_packet.png"></image>
+							<text class="income-title">红包领取记录</text>
+							<image class="income-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+						</view>
+						<view class="income-item" @click="navigateTo('consume')">
+							<image class="income-image" mode="aspectFit" src="../../static/icon_integral.png"></image>
+							<text class="income-title">积分领取记录</text>
+							<image class="income-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+						</view>
+					</view>
+				</view>
 			</view>
+			<view class="setting-group">
+				<!-- <view class="setting-item" @click="toFeedback">
+					<text class="settting-item-text">帮助与反馈</text>
+					<image class="setting-item-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+				</view> -->
+				<view class="setting-item" @click="toAbout">
+					<text class="settting-item-text">关于我们</text>
+					<image class="setting-item-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+				</view>
+				<!-- <view class="setting-item">
+					<text class="settting-item-text">联系客服</text>
+					<image class="setting-item-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+				</view> -->
+			</view>
+			<!-- <view class="setting-item-group">
+				<text class="settting-item-text" style="left: 30rpx;">设置</text>
+				<image class="setting-item-more" style="right: 30rpx;" mode="aspectFit"
+					src="../../static/icon_acount_more.svg"></image>
+			</view> -->
+			
+			<u-button class="quit" type="error" @click="quit" shape="circle" text="退出登录"></u-button>
+			
+			
 		</view>
-		<view class="center-list">
-			<view class="center-list-item border-bottom">
-				<text class="list-icon">&#xe60f;</text>
-				<text class="list-text">账号管理</text>
-				<text class="navigat-arrow">&#xe65e;</text>
-			</view>
-			<view class="center-list-item">
-				<text class="list-icon">&#xe639;</text>
-				<text class="list-text">新消息通知</text>
-				<text class="navigat-arrow">&#xe65e;</text>
-			</view>
-		</view>
-		<view class="center-list">
-			<view class="center-list-item border-bottom">
-				<text class="list-icon">&#xe60b;</text>
-				<text class="list-text">帮助与反馈</text>
-				<text class="navigat-arrow">&#xe65e;</text>
-			</view>
-			<view class="center-list-item">
-				<text class="list-icon">&#xe65f;</text>
-				<text class="list-text">服务条款及隐私</text>
-				<text class="navigat-arrow">&#xe65e;</text>
-			</view>
-		</view>
-		<view class="center-list">
-			<view class="center-list-item">
-				<text class="list-icon">&#xe614;</text>
-				<text class="list-text">关于应用</text>
-				<text class="navigat-arrow">&#xe65e;</text>
-			</view>
-		</view>
+		<u-loading-page :loading="isLoading" loadingText="加载中"></u-loading-page>
+		<u-tabbar
+			:value="currentIndex"
+			:fixed="true"
+			:placeholder="false"
+			:safeAreaInsetBottom="true"
+			inactiveColor="#000"
+			activeColor="#FD5449"
+		>
+			<u-tabbar-item v-for="(item,index) in tabbarList" :key="index" :text="item.text" :icon="item.icon" @click="swichTab" ></u-tabbar-item>
+		</u-tabbar>
 	</view>
 </template>
-
 <script>
+	import Wechat from 'jweixin-module';
+	import { mapGetters } from 'vuex'
+	import {
+		doQueryWechatSignature,
+		doQueryAccount,
+		doLoginOut
+	} from "../../api/user";
 	export default {
 		data() {
 			return {
+				isLoading:false,
+				currentIndex: uni.getStorageSync('roleType') ? 2 : 1,
 				login: false,
 				avatarUrl: '/static/logo.png',
-				uerInfo: {}
+				userAccount: {
+					money: 0,
+					integral: 0
+				}
+			}
+		},
+		computed: {
+			...mapGetters([
+				'tabbarList',
+				'userInfo'
+			])
+		},
+		onReady() {
+			this.toQueryAccount();
+		},
+		onLoad() {
+			
+			
+		},
+		filters: {
+			toPsyt(num) {
+			 if(num) {
+				 if(isNaN(num)){ 
+				  return ""
+				}
+				num = typeof num === 'string' ? parseFloat(num) : num  // 判断是否是字符串如果是字符串转成数字
+				num = num.toFixed(2)  // 保留两位
+				num = num.toLocaleString() // 转成金额显示模式
+				// 解决数字小于1时，IE只显示小数点后部分的问题
+				if (num.substring(0, 1) === '') {
+				   num = '0' + num
+				}
+				//判断是否有小数
+				if(num.indexOf('.') === -1){
+				   num = num + '.00'
+				}else {
+				   num = num.split('.')[1].length < 2 ? num + '0' : num
+				}
+				return num // 返回的是字符串23,245.12保留2位小数
+				} else if (num === 0) {
+				  num = num + '.00'
+				  return num
+				}else {
+				 return (num = null)
+				}
 			}
 		},
 		methods: {
-			goLogin() {
-				if (!this.login) {
-					console.log('点击前往登录');
-				}
-			}
+			quit(){
+				doLoginOut().then(res => {
+					if(res.code == "R000"){
+						uni.clearStorageSync();
+						this.$Router.push({name:'login'})
+					}
+				}).catch(error => {
+					console.log(error)
+				})
+			},
+			swichTab(e){
+				this.$Router.pushTab('/' + this.tabbarList[e].pagePath)
+			},
+			
+			toQueryAccount() {
+				this.isLoading = true;
+				doQueryAccount()
+					.then(result => {
+						if (result.code == 'R000' && result.data != undefined) {
+							console.log(result.data)
+							this.userAccount = result.data;
+							this.isLoading = false;
+						}else{
+							uni.showToast({
+								title: '系统加载错误2，请联系管理员',
+								icon: 'error',
+								mask: true
+							})
+							this.isLoading = false;
+						}
+					})
+					.catch(error => {
+						console.log(error)
+						uni.showToast({
+							title: '系统加载错误1，请联系管理员',
+							icon: 'error',
+							mask: true
+						})
+						this.isLoading = false;
+						console.log(error);
+					});
+			},
+			toAbout() {
+				uni.navigateTo({
+					url: '/pages/ucenter/about'
+				});
+			},
+			toFeedback() {
+				uni.navigateTo({
+					url: '/pages/ucenter/feedback'
+				});
+			},
+			navigateTo(path) {
+				uni.navigateTo({
+					url: '/pages/ucenter/'+path
+				});
+			},
 		}
 	}
 </script>
-
-<style>
+<style lang="scss" scoped>
 	/* #ifndef APP-PLUS-NVUE */
 	@font-face {
 		font-family: texticons;
@@ -69,12 +211,19 @@
 		src: url('~@/static/text-icon.ttf') format('truetype');
 	}
 
-	page {
+	.page {
 		background-color: #f8f8f8;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		position: absolute;
 	}
-
+	.quit{
+		width: 710rpx;
+		margin: 20rpx auto 0;
+	}
 	/* #endif*/
-
 	/* 解决头条小程序字体图标不显示问题，因为头条运行时自动插入了span标签，且有全局字体 */
 	/* #ifdef MP-TOUTIAO */
 	text :not(view) {
@@ -82,107 +231,243 @@
 	}
 
 	/* #endif */
+	.acount-group {
+		margin-left: 30rpx;
+		width: 90%;
+		margin-right: 30rpx;
+		margin-top: 52rpx;
+		flex-direction: column;
+		background-color: #ffffff;
+		border-radius: 12rpx;
+	}
+
+	.acount-title {
+		margin-top: 30rpx;
+		margin-left: 30rpx;
+		font-weight: bold;
+		font-size: 32rpx;
+		color: #000000;
+	}
 
 	.center {
 		flex: 1;
+		display: flex;
+		width: 100%;
+		height: 100%;
 		flex-direction: column;
-		background-color: #f8f8f8;
+		background-color: #F8F8F8;
 	}
 
-	.logo {
-		width: 750upx;
-		height: 240upx;
-		padding: 20upx;
-		background-color: #2F85FC;
-		flex-direction: row;
+	.top-group {
+		width: 100%;
+		background-repeat: no-repeat;
+		flex-direction: column;
 		align-items: center;
+	}
+
+	.user-info-group {
+		margin-top: 60rpx;
+		flex-direction: row;
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.top-background-color {
+		width: 100%;
+		height: 360upx;
+		position: absolute;
 	}
 
 	.logo-hover {
 		opacity: 0.8;
 	}
 
+	.top-title {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #FFFFFF;
+		line-height: 40px;
+	}
+
 	.logo-img {
-		width: 150upx;
-		height: 150upx;
+		width: 120upx;
+		margin-left: 40upx;
+		border-color: #bbbbbb;
+		border-width: 1rpx;
+		height: 120upx;
 		border-radius: 150upx;
 	}
 
 	.logo-title {
-		height: 150upx;
+		height: 100%;
 		flex: 1;
-		align-items: center;
-		justify-content: space-between;
-		flex-direction: row;
-		margin-left: 20upx;
+		justify-content: center;
+		flex-direction: column;
+		margin-left: 28upx;
 	}
 
 	.uer-name {
-		height: 60upx;
-		line-height: 60upx;
-		font-size: 38upx;
-		color: #FFFFFF;
+		line-height: 40upx;
+		font-size: 32rpx;
+		color: #ffffff;
+		font-weight: bold;
+		margin: 5rpx 0;
 	}
 
-	.go-login-navigat-arrow {
-		font-size: 38upx;
-		color: #FFFFFF;
+	.icon-user-more {
+		width: 40upx;
+		margin-left: 20upx;
+		margin-right: 40rpx;
+		height: 40upx;
 	}
 
-	.login-title {
-		height: 150upx;
+	.wallet-group {
+		width: 100%;
+		margin-top: 40rpx;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.wallet-item {
+		width: 50%;
+		height: 150rpx;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		margin-left: 20upx;
 	}
 
-	.center-list {
-		flex-direction: column;
-		background-color: #FFFFFF;
-		margin-top: 20upx;
-		width: 750upx;
+	.wallet-divider {
+		background-color: #eeeeee;
+		height: 70rpx;
+		border-radius: 2rpx;
+		width: 2rpx;
 	}
 
-	.center-list-item {
-		height: 90upx;
-		width: 750upx;
-		flex-direction: row;
-		padding: 0upx 20upx;
-	}
-
-	.border-bottom {
-		border-bottom-width: 1upx;
-		border-color: #c8c7cc;
-		border-bottom-style: solid;
-	}
-
-	.list-icon {
-		width: 40upx;
-		height: 90upx;
-		line-height: 90upx;
-		font-size: 34upx;
-		color: #2F85FC;
+	.wallet-value {
+		color: #555555;
+		font-size: 40rpx;
+		font-weight: bold;
 		text-align: center;
-		font-family: texticons;
-		margin-right: 20upx;
 	}
 
-	.list-text {
-		height: 90upx;
-		line-height: 90upx;
-		font-size: 34upx;
-		color: #555;
-		flex: 1;
+	.wallet-title {
+		color: #555555;
+		margin-top: 16rpx;
+		font-size: 26rpx;
+		text-align: center;
 	}
 
-	.navigat-arrow {
-		height: 90upx;
-		width: 40upx;
-		line-height: 90upx;
-		font-size: 34upx;
-		color: #555;
-		text-align: right;
-		font-family: texticons;
+	.income-group {
+		margin-top: 30rpx;
+		border-top-color: #eeeeee;
+		border-top-width: 0.5rpx;
+		width: 100%;
+		height: 88rpx;
+		align-items: center;
+		flex-direction: row;
+	}
+
+	.income-item {
+		width: 50%;
+		height: 100%;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.income-image {
+		width: 40rpx;
+		height: 40rpx;
+	}
+
+	.income-title {
+		margin-left: 18rpx;
+		font-size: 26rpx;
+		color: #666666;
+	}
+
+	.income-more {
+		width: 20rpx;
+		height: r20px;
+		height: 100%;
+		margin-left: 18rpx;
+		opacity: 0.8;
+	}
+
+	.setting-item-more {
+		width: 40rpx;
+		height: 40rpx;
+		height: 100%;
+		position: absolute;
+		right: 0rpx;
+	}
+
+	.setting-group {
+		padding-left: 30rpx;
+		padding-right: 30rpx;
+		padding-top: 20rpx;
+		padding-bottom: 20rpx;
+		flex-direction: column;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #FFFFFF;
+		margin-left: 30rpx;
+		margin-right: 30rpx;
+		margin-top: 20upx;
+		width: 92%;
+		border-radius: 12rpx;
+	}
+
+	.setting-item-group {
+		flex-direction: row;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #FFFFFF;
+		margin-left: 30rpx;
+		margin-right: 30rpx;
+		margin-top: 20upx;
+		width: 92%;
+		height: 100rpx;
+		border-radius: 12rpx;
+	}
+
+	.setting-item {
+		width: 100%;
+		align-items: center;
+		height: 100rpx;
+		flex-direction: row;
+	}
+
+	.settting-item-text {
+		position: absolute;
+		left: 0rpx;
+		font-size: 30rpx;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		color: #333333;
+		padding-bottom: 10rpx;
+		padding-top: 10rpx;
+	}
+	.level{
+		flex-direction: row;
+		text{
+			margin-right: 10rpx;
+		}
+	}
+	.promo-code {
+		display: flex;
+		font-size: 40rpx;
+		color: #fa192c;
+		text-align: center;
+		height: 100%;
+		align-items: center;
+		position: absolute;
+		right: 0rpx;
 	}
 </style>

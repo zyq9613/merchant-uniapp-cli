@@ -1,0 +1,366 @@
+<template>
+	<view class="media-item" @click="click">
+		<image :src="liveData.liveCover" class="image-cover" mode="aspectFill"></image>
+		<view class="image-cover-layer"></view>
+		<view class="live-top-group">
+			<view class="live-wait-group" v-if="liveData.states == 0">
+				<text class="live-end">待开始</text>
+				<image class="live-image" src="../../static/icon_living.png" mode="aspectFit"></image>
+			</view>
+			<view class="living-group" v-else-if="liveData.states == 1">
+				<text class="live-end">直播中</text>
+				<image class="live-image" src="../../static/icon_living.png" mode="aspectFit"></image>
+			</view>
+			<view class="live-end-group" v-else="liveData.states == 2">
+				<text class="live-end">已结束</text>
+				<image class="live-image" src="../../static/icon_living.png" mode="aspectFit"></image>
+			</view>
+			<!-- <view class="live-watch-group">
+				<image class="live-image" style="margin-left: 0rpx;" src="../../static/icon_watch.png" mode="aspectFit">
+				</image>
+				<text class="live-watch-text">50人在看</text>
+			</view> -->
+			
+		</view>
+		<view class="live-detail">
+			<u-tag class="tag" text="视频" type="primary" size="mini"></u-tag>
+			<text class="">{{liveData.title}}</text>
+		</view>
+		
+		
+		<!-- states 状态：0:待开始 1.进行中 2.已结束 -->
+		<view class="info-group">
+			<image class="image-avatar" mode="aspectFit" :src="liveData.ico" v-if="liveData.ico">
+			</image>
+			<image class="image-avatar" mode="aspectFit" src="../../static/icon_default_avatar.png" v-else></image>
+			<text class="live-author">{{liveData.mname}}</text>
+
+			<text class="red-packet-reward" v-if="liveData.rewardType == 1">红包奖励</text>
+			<text class="integral-reward" v-else>积分奖励</text>
+			<view class="share-group">
+				<image src="../../static/icon_share.png" class="share-image"></image>
+				<text class="share-text" @click.stop="handleShare">分享</text>
+				
+			</view>
+		</view>
+		<!-- <l-painter :board="poster"/> -->
+		<!-- <poster ref="posterWrap" @poster="poster"  :postData="postData"></poster>
+		<posterPop @isClose="handleClosePop" v-if="isShowImage" :src="src"></posterPop> -->
+	</view>
+</template>
+
+<script>
+	// import poster from './components/poster.nvue'
+	// import posterPop from './components/poster-pop.nvue'
+	export default {
+		data(){
+			return{
+				postData:{},
+				isShowPoster:false,
+				src:'',
+				isShowImage:false,
+			}
+		},
+		props: {
+			liveData: {
+				type: Object,
+				default: function(e) {
+					return {}
+				}
+			},
+			shareCode:{
+				type:String
+			}
+		},
+		created() {
+			console.log(getApp().globalData.userInfo)
+			console.log(this.shareCode)
+		},
+		methods: {
+			handleClosePop(){
+				this.isShowImage = false
+			},
+			poster(value){
+				this.src = value;
+				this.isShowImage = true
+			},
+			handleShare(){
+				console.log(href)
+				let qurey = `query=${encodeURIComponent(JSON.stringify({id:this.liveData.id,shareCode:this.shareCode}))}`
+				const href = this.liveData.showType == 0 ? `${this.$baseUrl}#/pages/live/half?${qurey}` : `${this.$baseUrl}#/pages/live/full?${qurey}`;
+				this.$emit('submitToShare',{
+					href:href,
+					title:this.liveData.title,
+					liveCover:this.liveData.liveCover
+				})
+				// this.postData = Object.assign({},this.liveData,{
+				// 	href:href
+				// })
+				// this.$refs.posterWrap.$refs.poster.canvasToTempFilePathSync({
+				//   fileType: "jpeg",
+				//   quality: 2,
+				//   success: (res) => {
+				// 	this.src = res.tempFilePath;
+				// 	setTimeout(() => {
+				// 		this.isShowImage = true
+				// 	},500)
+				// 	// 非H5 保存到相册
+				// 	uni.saveImageToPhotosAlbum({
+				// 		filePath: res.tempFilePath,
+				// 		success: function () {
+				// 			console.log('save success');
+				// 		}
+				// 	});
+				//   },
+				// });
+			},
+			click() {
+				this.$emit('click');
+			},
+			close(e) {
+				e.stopPropagation();
+				this.$emit('close');
+			}
+		}
+	}
+</script>
+
+<style scoped lang="scss">
+	.media-item {
+		position: absolute;
+		flex: 1;
+		display: flex;
+		width: 710rpx;
+		flex-direction: column;
+		height: 100%;
+		background-color: #ffffff;
+	}
+
+
+	.media-title {
+		padding-top: 10rpx;
+		padding-bottom: 10rpx;
+		color: #ffffff;
+		background-color: rgba(0, 0, 0, 0.04);
+		lines: 2;
+		max-lines: 2;
+		padding-left: 20rpx;
+		padding-right: 20rpx;
+		font-weight: bold;
+		text-overflow: ellipsis;
+		font-size: 32rpx;
+	}
+
+	.image-avatar {
+		width: 80rpx;
+		height: 100rpx;
+	}
+
+	.live-author {
+		font-size: 28rpx;
+		font-weight: bold;
+		margin-top: 10rpx;
+		margin-left: 20rpx;
+		color: #323232;
+		text-align: center;
+	}
+
+	.red-packet-reward {
+		margin-left: 10rpx;
+		font-size: 28rpx;
+		margin-left: 20rpx;
+		margin-top: 10rpx;
+		border-radius: 8rpx;
+		border: 2rpx solid #FC524B;
+		font-weight: 500;
+		color: #FC524B;
+		padding-left: 10rpx;
+		padding-right: 10rpx;
+		padding-top: 4rpx;
+		padding-bottom: 4rpx;
+
+	}
+
+	.integral-reward {
+		margin-left: 10rpx;
+		margin-left: 20rpx;
+		margin-top: 10rpx;
+		font-size: 28rpx;
+		border-radius: 8rpx;
+		border: 2rpx solid #4B9CFC;
+		font-weight: 500;
+		color: #4B9CFC;
+		padding-left: 10rpx;
+		padding-right: 10rpx;
+		padding-top: 4rpx;
+		padding-bottom: 4rpx;
+
+	}
+
+	.image-cover {
+		width: 100%;
+		height: 400rpx;
+	}
+
+	.image-cover-layer {
+		width: 100%;
+		height: 400rpx;
+		position: absolute;
+		background-color: rgba(0, 0, 0, 0.4);
+	}
+
+
+	.live-top-group {
+		position: absolute;
+		top:20rpx;
+		right: 20rpx;
+		flex-direction: row;
+	}
+	
+	
+	.live-detail {
+		position: absolute;
+		left: 20rpx;
+		top: 20rpx;
+		width: 100%;
+		/* height: 40rpx; */
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #FFFFFF;
+		flex-direction: row;
+		align-items: center;
+		text{
+			margin-left: 30rpx;
+			white-space: nowrap;
+			overflow: hidden;
+			width: 50%;
+			text-overflow: ellipsis;
+		}
+	}
+
+
+	.live-wait-group {
+		padding-left: 10rpx;
+		padding-right: 20rpx;
+		align-items: center;
+		flex-direction: row;
+		justify-content: center;
+		height: 48rpx;
+		background-color: #FCA34B;
+		border-radius: 10rpx 0px 0px 10rpx;
+	}
+
+	.living-group {
+		padding-left: 10rpx;
+		padding-right: 20rpx;
+		align-items: center;
+		flex-direction: row;
+		justify-content: center;
+		height: 48rpx;
+		background-color: #FC524B;
+		border-radius: 10rpx;
+	}
+
+	.live-end-group {
+		padding-left: 10rpx;
+		padding-right: 20rpx;
+		align-items: center;
+		flex-direction: row;
+		justify-content: center;
+		height: 48rpx;
+		background-color: #414141;
+		border-radius: 10rpx 0px 0px 10rpx;
+	}
+
+	.live-watch-group {
+		padding-left: 20rpx;
+		padding-right: 10rpx;
+		flex-direction: row;
+		display: flex;
+		height: 48rpx;
+		align-items: center;
+		justify-content: center;
+		background-color: rgba(0, 0, 0, 0.6);
+		border-radius: 0px 10rpx 10rpx 0px;
+	}
+
+	.live-image {
+		margin-left: 10rpx;
+		width: 24rpx;
+		height: 24rpx;
+	}
+
+	.live-watch-text {
+		font-size: 24rpx;
+		margin-left: 10rpx;
+		color: #FFFFFF;
+		line-height: 40px;
+	}
+
+	.living-text {
+		width: 80rpx;
+		font-size: 20rpx;
+		height: 50rpx;
+		font-size: 28rpx;
+		margin-left: 20rpx;
+		margin-bottom: 20rpx;
+		background-color: #FC524B;
+		padding-top: 4rpx;
+		padding-bottom: 4rpx;
+
+	}
+
+	.live-end {
+		font-size: 24rpx;
+		color: #ffffff;
+		font-weight: bold;
+		text-align: center;
+	}
+
+	.live-status-wait {
+		width: 80rpx;
+		font-size: 20rpx;
+		color: #ffffff;
+		opacity: 0.9;
+		margin-left: 20rpx;
+		margin-bottom: 20rpx;
+		text-align: center;
+		background-color: #FCA34B;
+		padding-top: 4rpx;
+		padding-bottom: 4rpx;
+		border-radius: 10rpx;
+	}
+
+
+	.info-group {
+		width: 100%;
+		height: 100rpx;
+		display: flex;
+		padding-bottom: 20rpx;
+		align-items: center;
+		flex-direction: row;
+	}
+
+	.share-group {
+		position: absolute;
+		right: 30rpx;
+		height: 100%;
+		padding-top: 10rpx;
+		flex-direction: row;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.share-image {
+		width: 36rpx;
+		height: 34rpx;
+	}
+
+	.share-text {
+		margin-left: 10rpx;
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #323232;
+	}
+</style>

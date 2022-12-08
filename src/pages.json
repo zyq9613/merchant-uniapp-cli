@@ -1,32 +1,315 @@
 {
-  "pages": [{
-      "path": "pages/news/index",
-      "style": {}
-    },
-    {
-      "path": "pages/news/detail",
-      "style": {
-        "app-plus": {
-          "titleNView": {
-            "type": "transparent"
-          }
-        }
-      }
-    }
-  ],
-  "globalStyle": {
-    "navigationBarTextStyle": "white",
-    "navigationBarTitleText": "新闻资讯",
-    "navigationBarBackgroundColor": "#2F85FC",
-    "backgroundColor": "#FFFFFF"
-  },
-  "rightWindow": {
-    "path": "responsive/right-window.vue",
-    "style": {
-      "width": "calc(100vw - 450px)"
-    },
-    "matchMedia": {
-      "minWidth": 768
-    }
-  }
+	"easycom": {
+		"custom": {
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue",
+			"^u-(.*)": "uview-ui/components/u-$1/u-$1.vue",
+			"^(?!z-paging-refresh|z-paging-load-more)z-paging(.*)": "z-paging/components/z-paging$1/z-paging$1.vue"
+		}
+	},
+	"pages": [
+		{
+			"path": "pages/login/wechat",
+			"aliasPath": "/",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "login"
+		},
+		{
+			"path": "pages/login/business",
+			"aliasPath": "/",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "business"
+		},
+		{
+			"path": "pages/login/binding",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "binding"
+		},
+		{
+			"path": "pages/login/phone",
+			"style": {
+				"navigationBarTitleText": "手机号登录",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			},
+			"name": "phone"
+		},
+		{
+			"path": "pages/login/register",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "register"
+		},
+		{
+			"path": "pages/live/list",
+			"style": {
+				"navigationBarBackgroundColor": "#ff0000",
+				"navigationBarTitleText": "直播",
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": false,
+				"disableScroll": true,
+				"h5": {
+					"titleNView": {
+						"titleColor": "#"
+					}
+				}
+			},
+			"name": "list"
+		},
+		{
+			"path": "pages/ucenter/ucenter",
+			"style": {
+				"navigationBarTitleText": "个人中心",
+				"navigationStyle": "custom",
+				"navigationBarBackgroundColor": "#FD5449"
+			},
+			"name": "ucenter"
+		},
+		{
+			"path": "pages/merchants/planset",
+			"style": {
+				"navigationBarTitleText": "计划设置",
+				"navigationStyle": "custom",
+				"navigationBarBackgroundColor": "#FD5449"
+			},
+			"name": "planset"
+		},
+		{
+			"path": "pages/merchants/usercenter",
+			"style": {
+				"navigationBarTitleText": "个人中心",
+				"navigationStyle": "custom",
+				"navigationBarBackgroundColor": "#FD5449"
+			},
+			"name": "usercenter"
+		},
+		{
+			"path": "pages/ucenter/consume",
+			"style": {
+				"navigationBarTitleText": "积分领取记录",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			},
+			"name": "consume"
+		},
+		{
+			"path": "pages/ucenter/bag",
+			"style": {
+				"navigationBarTitleText": "红包领取记录",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			},
+			"name": "bag"
+		},
+		{
+			"path": "pages/consume/consume",
+			"style": {
+				"navigationBarTitleText": "积分商城",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			},
+			"name": "consume1"
+		},
+		{
+			"path": "pages/ucenter/about",
+			"style": {
+				"navigationBarTitleText": "关于我们",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			},
+			"name": "about"
+		},
+		{
+			"path": "pages/ucenter/feedback",
+			"style": {
+				"navigationBarTitleText": "关于我们",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			},
+			"name": "feedback"
+		},
+		{
+			"path": "pages/ucenter/udetail",
+			"style": {
+				"navigationBarTitleText": "用户信息",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			},
+			"name": "udetail"
+		},
+		{
+			"path": "pages/ucenter/modify",
+			"style": {
+				"navigationBarTitleText": "修改信息",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			},
+			"name": "modify"
+		},
+		{
+			"path": "pages/ucenter/gender",
+			"style": {
+				"navigationBarTitleText": "修改性别",
+				"navigationBarTextStyle": "black",
+				"navigationStyle": "custom"
+			},
+			"name": "gender"
+		},
+		{
+			"path": "pages/common/webview/webview",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "webview"
+		},
+		{
+			"path": "pages/live/half",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "half"
+		},
+		{
+			"path": "pages/live/full",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "full"
+		},
+		{
+			"path": "pages/live/getEnvelope",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false
+			},
+			"name": "getEnvelope"
+		},
+		{
+			"path": "pages/merchants/hbrecord",
+			"style": {
+				"navigationBarTitleText": "红包流水",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "hbrecord"
+		},
+		{
+			"path": "pages/merchants/planlist",
+			"style": {
+				"navigationBarTitleText": "计划列表",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "planlist"
+		},
+		{
+			"path": "pages/merchants/usermanagement",
+			"style": {
+				"navigationBarTitleText": "会员管理",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "usermanagement"
+		},
+		{
+			"path": "pages/merchants/awardbill",
+			"style": {
+				"navigationBarTitleText": "奖励流水",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "awardbill"
+		},
+		{
+			"path": "pages/merchants/fundDetails",
+			"style": {
+				"navigationBarTitleText": "资金明细",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "fundDetails"
+		},
+		{
+			"path": "pages/merchants/details/moneyDetail",
+			"style": {
+				"navigationBarTitleText": "充值明细",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "moneyDetail"
+		},
+		{
+			"path": "pages/merchants/recharge",
+			"style": {
+				"navigationBarTitleText": "充值",
+				"enablePullDownRefresh": false,
+				"navigationStyle": "custom"
+			},
+			"name": "recharge"
+		},
+		{
+			"path": "pages/home/index",
+			"style": {
+				"navigationBarTitleText": "home",
+				"navigationStyle": "custom"
+			},
+			"name": "home"
+		},
+		{
+			"path": "pages/tips/index",
+			"style": {
+				"navigationBarTitleText": "登录成功",
+				"navigationStyle": "custom"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "众城直播",
+		"navigationBarBackgroundColor": "#2F85FC",
+		"backgroundColor": "#FFFFFF"
+	},
+	"tabBar": {
+		"color": "#666666",
+		"selectedColor": "#fa192c",
+		"borderStyle": "black",
+		"backgroundColor": "#FFFFFF",
+		"list": [
+			{
+				"pagePath": "pages/live/list"
+			},
+			{
+				"pagePath": "pages/consume/consume"
+			},
+			{
+				"pagePath": "pages/ucenter/ucenter"
+			},
+			{
+				"pagePath": "pages/merchants/usercenter"
+			},
+			{
+				"pagePath": "pages/home/index"
+			}
+		]
+	}
 }

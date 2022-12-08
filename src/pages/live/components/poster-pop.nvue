@@ -1,0 +1,43 @@
+<template>
+	<div class="wrap" @click.stop="">
+		<u-loading-icon v-if="!src"></u-loading-icon>
+		<image v-else :src="src" mode="widthFix"></image>
+		<u-icon @click="handleClose" name="close" size="30" color="#fff" top="20"></u-icon>
+	</div>
+</template>
+
+<script>
+	export default {
+		props: {
+			src: {
+				type: String,
+			},
+		},
+		methods:{
+			handleClose(){
+				this.$emit('isClose')
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	.wrap{
+		position: fixed;
+		width: 100%;
+		height: 100%;
+		left: 0;
+		top:0;
+		background-color: rgba(0, 0, 0, .5);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 10000;
+		flex-direction: column;
+		image{
+			width: 600rpx;
+			margin-top: -250rpx;
+			border-radius: 20rpx;
+		}
+	}
+</style>

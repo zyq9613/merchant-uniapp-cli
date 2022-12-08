@@ -1,0 +1,323 @@
+<template>
+	<view class="page-news">
+		<scroll-view class="listview" enableBackToTop="true" scroll-y @scrolltolower="loadMore()">
+			<div class="list-item-group">
+				<view v-for="(item, index) in dataList" :key="index" class="list-item">
+					<live-item @submitToShare="submitToShare" :shareCode="shareCode" :liveData="item" @click="toWatchLive(item)"></live-item>
+				</view>
+			</div>
+			<view class="loading-more" v-if="isLoading && hasMore">
+				<text class="loading-more-text">{{loadingText}}</text>
+			</view>
+		</scroll-view>
+		<no-data class="no-data" v-if="isNoData" @retry="loadMore"></no-data>
+		
+	</view>
+</template>
+
+<script>
+	import {
+		doQueryLiveList,
+		doJoinLive
+	} from "../../api/live";
+	import liveItem from './live-item.nvue';
+	import uniLoadMore from '@/components/uni-load-more.vue';
+	import noData from '@/components/nodata.nvue';
+	import { doQueryAccount } from '@/api/user'
+	export default {
+		components: {
+			uniLoadMore,
+			noData,
+			liveItem
+		},
+		props: {
+			type: {
+				type: [Number, String],
+				default: null
+			},
+			shareCode:{
+				type:String
+			}
+		},
+		data() {
+			return {
+				dataList: [],
+				pulling: false,
+				refreshing: false,
+				refreshFlag: false,
+				refreshText: "",
+				isLoading: false,
+				hasMore: true,
+				loadingText: '加载中...',
+				isNoData: false,
+				pulling: false,
+				pageSize: 10,
+				pageIndex: 1,
+                status:1,
+				loadingMoreText: {
+					contentdown: '',
+					contentrefresh: '',
+					contentnomore: ''
+				},
+                
+			}
+		},
+		created() {
+			this.pullTimer = null;
+			console.log(this.shareCode)
+		},
+		methods: {
+			submitToShare(val){
+				this.$emit('submitToShare',val)
+			},
+			loadData(refresh) {
+				if (this.isLoading || !this.hasMore) {
+					return;
+				}
+				this.isLoading = true;
+				this.isNoData = false;
+				if (refresh) {
+					this.pageIndex = 1;
+					this.dataList = [];
+				}
+				doQueryLiveList(this.type, this.pageIndex, this.pageSize,this.status)
+					.then(result => {
+						if (result != undefined && result.code == "R000" && result.data != undefined) {
+							const data_list = result.data.datas;
+							let length = data_list.length;
+							this.isNoData = (length <= 0);
+							let hasMore = result.data.hasNext;
+							if (hasMore) {
+								this.pageIndex++;
+							}
+							this.hasMore = hasMore;
+							if (data_list != undefined && data_list.length > 0) {
+								this.dataList = this.dataList.concat(data_list);
+							}
+						}
+
+						this.refreshComlepted(refresh);
+					})
+					.catch(error => {
+						console.log(error);
+						if (this.dataList.length == 0) {
+							this.isNoData = true;
+						}
+						this.refreshComlepted(refresh);
+					});
+
+			},
+			refreshComlepted(refresh) {
+				this.isLoading = false;
+				if (refresh) {
+					this.refreshing = false;
+					this.refreshFlag = false;
+					this.refreshText = "已刷新";
+					if (this.pullTimer) {
+						clearTimeout(this.pullTimer);
+					}
+					this.pullTimer = setTimeout(() => {
+						this.pulling = false;
+					}, 1000);
+				}
+				if (this.dataList.length == 0) {
+					this.isNoData = true;
+				}
+			},
+			loadMore(e) {
+				this.loadData();
+			},
+			clear() {
+				this.dataList.length = 0;
+			},
+
+			doJoinLiveHome(liveData) {
+				let that = this;
+				doJoinLive(liveData.id)
+					.then(result => {
+						if (result != undefined && result.code == "R000" && result.data != undefined) {
+							let liveRoom = result.data;
+							// if(uni.getStorageSync(result.data.id)){
+							// 	liveRoom = Object.assign({},result.data,{
+							// 		moneyBonuses:[
+							// 			{
+							// 				viewLength:uni.getStorageSync(result.data.id),
+							// 				cost:result.data.moneyBonuses[0].cost,
+							// 				type:result.data.moneyBonuses[0].type,
+							// 			}
+							// 		]
+							// 	})
+							// }else{
+							// 	uni.setStorageSync(result.data.id,result.data.moneyBonuses[0].viewLength * 60 * 1000)
+							// 	liveRoom = result.data;
+							// }
+							that.toWatchLive(liveRoom);
+						}else{
+                            uni.showToast({
+                                title: result.msg ,
+                                icon: 'none'
+                            });
+                        }
+					})
+					.catch(error => {
+						console.log(error);
+					});
+			},
+
+			// showType  直播方式： 0.横屏直播 1.竖屏直播
+			toWatchLive(liveRoom) {
+				let showType = liveRoom.showType;
+				console.log(showType);
+				let url;
+				this.$store.commit('setLiveRoom',{
+					liveData:liveRoom
+				})
+				if (showType == 0) {
+					this.$Router.push({ name: 'half', params: { id: liveRoom.id,shareCode:this.shareCode }})
+				} else {
+					this.$Router.push({ name: 'full', params: { id: liveRoom.id,shareCode:this.shareCode }})
+				}
+				// uni.navigateTo({
+				// 	url: url
+				// });
+			},
+
+			refreshData() {
+				if (this.isLoading) {
+					return;
+				}
+				this.pulling = true;
+				this.refreshing = true;
+				this.refreshText = "正在刷新...";
+				this.loadData(true);
+			},
+			onrefresh(e) {
+				this.refreshData();
+				// #ifdef APP-NVUE
+				this.$refs.list.resetLoadmore();
+				// #endif
+			},
+			onpullingdown(e) {
+				if (this.refreshing) {
+					return;
+				}
+				this.pulling = false;
+				if (Math.abs(e.pullingDistance) > Math.abs(e.viewHeight)) {
+					this.refreshFlag = true;
+					this.refreshText = "释放立即刷新";
+				} else {
+					this.refreshFlag = false;
+					this.refreshText = "下拉可以刷新";
+				}
+			},
+		}
+	}
+</script>
+
+<style scoped>
+
+	.no-data {
+		flex: 1;
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 10;
+	}
+
+	.page-news {
+		flex: 1;
+		width: 100%;
+		flex-direction: column;
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+	}
+
+	.listview {
+		width: 100%;
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		/* #ifndef APP-NVUE */
+		display: flex;
+		flex-direction: column;
+		/* #endif */
+		/* #ifndef MP-ALIPAY */
+		flex-direction: column;
+		/* #endif */
+	}
+
+	.list-item-group {
+		flex-wrap: wrap;
+		display: flex;
+		width: 100%;
+	}
+
+	.list-item {
+		width: 100%;
+		height: 500rpx;
+		margin-bottom: 30rpx;
+		align-items: center;
+	}
+
+	.refresh {
+		justify-content: center;
+	}
+
+	.refresh-view {
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		width: 750rpx;
+		height: 64px;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.refresh-icon {
+		width: 32px;
+		height: 32px;
+		transition-duration: .5s;
+		transition-property: transform;
+		transform: rotate(0deg);
+		transform-origin: 15px 15px;
+	}
+
+	.refresh-icon-active {
+		transform: rotate(180deg);
+	}
+
+	.loading-icon {
+		width: 28px;
+		height: 28px;
+		margin-right: 5px;
+		color: gray;
+	}
+
+	.loading-text {
+		margin-left: 2px;
+		font-size: 16px;
+		color: #999999;
+	}
+
+	.loading-more {
+		align-items: center;
+		justify-content: center;
+		padding-top: 14px;
+		padding-bottom: 14px;
+		text-align: center;
+	}
+
+	.loading-more-text {
+		font-size: 28upx;
+		color: #999;
+	}
+</style>

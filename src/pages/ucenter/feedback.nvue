@@ -1,0 +1,278 @@
+<template>
+	<div class="page">
+
+		<div class="tabs">
+			<view v-for="(tab,index) in tabBars" :key="tab.id" class="uni-tab-item" :id="tab.id" :data-current="index"
+				@click="ontabtap">
+				<text class="uni-tab-item-title"
+					:class="tabIndex==index ? 'uni-tab-item-title-active' : ''">{{tab.name}}</text>
+			</view>
+		</div>
+		<!-- 直播互动 -->
+		<div class="item-faq-group" v-if="tabIndex == 0">
+			<scroll-view class="comment-group" id="commentContainer" scroll-y="true" show-scrollbar="false">
+				<view id="commentContent">
+					<div v-for="(item, index) in faqList" :key="item.id" class="faq-group" @click="onFoldFaq(index)">
+						<div class="faq-title-group">
+							<text class="faq-title">{{ item.question }}</text>
+							<image src="../../static/icon_fold.png" mode="aspectFit" class="faq-icon"
+								v-if="item.expand == 1"></image>
+							<image src="../../static/icon_unfold.png" mode="aspectFit" class="faq-icon" v-else></image>
+						</div>
+						<text class="faq-content" v-if="item.expand == 1">{{ item.answer }}</text>
+					</div>
+				</view>
+			</scroll-view>
+		</div>
+		<!-- 直播介绍 -->
+		<div class="item-feedback-group" v-else>
+			<textarea class="feedback-input" placeholder="请输入10个字以上的问题描述以便我们更好的帮助" v-model="content" />
+			<text class="phone-title">联系电话</text>
+			<input class="phone-input" placeholder="选填，便于我们与您联系" v-model="phone" />
+			<button class="submit-btn" :disabled="!canSubmit">提交</button>
+
+		</div>
+	</div>
+</template>
+<script>
+	import TIM from 'tim-wx-sdk'
+	export default {
+		data() {
+			return {
+				tabIndex: 0,
+				tabBars: [{
+					name: '快捷帮助',
+					id: 'liveInteract'
+				}, {
+					name: '意见反馈',
+					id: 'liveIntroduce'
+				}],
+				faqList: [{
+						question: '红包领取问题',
+						answer: '这里是描述红包领取问题的这里是描述红包领取问题的这里是描述红包领取问题的这里是描述红包领取问题的这里是描述红包领取问题的这里是描述红包领取问题的',
+						expand: 1
+					},
+					{
+						question: '红包兑换问题',
+						answer: '这里是描述红包兑换问题的这里是描述红包兑换问题的这里是描述红包兑换问题的这里是描述红包兑换问题的这里是描述红包兑换问题的这里是描述红包兑换问题的',
+						expand: 0
+					},
+					{
+						question: '积分兑换问题',
+						answer: '这里是积分兑换问题问题的这里是积分兑换问题问题的这里是积分兑换问题问题的这里是积分兑换问题问题的这里是积分兑换问题问题的这里是积分兑换问题问题的',
+						expand: 0
+					},
+					{
+						question: '红包领取问题',
+						answer: '这里是描述红包领取问题的这里是描述红包领取问题的这里是描述红包领取问题的这里是描述红包领取问题的这里是描述红包领取问题的这里是描述红包领取问题的',
+						expand: 0
+					}
+				],
+				content: '',
+				phone: ''
+
+
+			}
+		},
+		computed: {
+			canSubmit() {
+				return this.content != '' && this.content.length > 0;
+			},
+			isPhone() {
+				return /^1\d{10}$/.test(this.phone);
+			},
+		},
+		onReady() {
+
+
+
+		},
+		onLoad(option) {
+
+		},
+		onShow() {},
+		onHide() {
+
+		},
+		methods: {
+
+			ontabtap(e) {
+				let index = e.target.dataset.current || e.currentTarget.dataset.current;
+				this.switchTab(index);
+			},
+			switchTab(index) {
+				if (this.tabIndex === index) {
+					return;
+				}
+				this.tabIndex = index;
+			},
+			onFoldFaq(position) {
+				console.info(position);
+				let faq = this.faqList[position];
+				if (faq.expand == 1) {
+					faq.expand = 0
+				} else {
+					faq.expand = 1;
+				}
+			},
+		}
+	}
+</script>
+
+<style>
+	.page {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		position: absolute;
+	}
+
+	.tabs {
+		width: 100%;
+		height: 120rpx;
+		border-width: 1px;
+		border-style: solid;
+		border-color: #EEEEEE;
+		align-items: center;
+		justify-content: center;
+		display: flex;
+		flex-direction: row;
+	}
+
+	.uni-tab-item {
+		width: 30%;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.uni-tab-item-title {
+		color: #323232;
+		font-size: 26rpx;
+		height: 80rpx;
+		line-height: 80rpx;
+
+		width: 100%;
+		text-align: center;
+
+	}
+
+	.uni-tab-item-title-active {
+		color: #323232;
+		font-weight: bold;
+		font-size: 32rpx;
+	}
+
+	.item-faq-group {
+		width: 100%;
+		flex-direction: column;
+		height: 90%;
+	}
+
+	.item-feedback-group {
+		width: 100%;
+		align-items: center;
+		flex-direction: column;
+		height: 90%;
+		display: flex;
+		background-color: #f8f8f8;
+	}
+
+	.faq-group {
+		width: 100%;
+		flex-direction: column;
+		border-bottom-width: 1px;
+
+		border-bottom-style: solid;
+		padding-top: 30rpx;
+		padding-bottom: 30rpx;
+
+		border-bottom-color: #EEEEEE;
+	}
+
+	.faq-title-group {
+		width: 100%;
+		flex-direction: row;
+		height: 54rpx;
+		display: flex;
+	}
+
+	.faq-title {
+		color: #333333;
+		width: 85%;
+		margin-left: 20rpx;
+		font-size: 34rpx;
+		font-weight: bold;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+	}
+
+	.faq-icon {
+		width: 28rpx;
+		height: 100%;
+	}
+
+	.faq-content {
+		flex: 1;
+		margin-top: 20rpx;
+		margin-left: 20rpx;
+		margin-right: 20rpx;
+		display: flex;
+		color: #777777;
+		letter-spacing: 1px;
+		font-size: 28rpx;
+		text-align: left;
+	}
+
+	.feedback-input {
+		width: 100%;
+		font-size: 26rpx;
+		color: #333333;
+		background-color: #ffffff;
+		padding-top: 30rpx;
+		padding-bottom: 30rpx;
+		padding-left: 30rpx;
+		height: 320rpx;
+		padding-right: 30rpx;
+	}
+
+	.phone-title {
+		width: 100%;
+		padding-left: 30rpx;
+		padding-top: 30rpx;
+		padding-bottom: 30rpx;
+		justify-content: center;
+		align-items: center;
+		font-size: 26rpx;
+		font-weight: bold;
+	}
+
+	.phone-input {
+		width: 100%;
+		height: 100rpx;
+		padding-left: 30rpx;
+		color: #333333;
+		background-color: #ffffff;
+		font-size: 26rpx;
+	}
+
+	.submit-btn {
+		width: 80%;
+		margin-top: 120rpx;
+		color: #ffffff;
+		padding-top: 2rpx;
+		padding-bottom: 2rpx;
+		background: #FD5449;
+		border-radius: 10px;
+	}
+	.submit-btn[disabled] {
+		border-width: 1px;
+		border-color: #FD5449;
+		color: #FFFFFF;
+		opacity: 0.4;
+		background-color: #FD5449;
+	}
+</style>

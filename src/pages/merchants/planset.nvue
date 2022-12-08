@@ -1,0 +1,228 @@
+<template>
+	<div>
+		
+		<u-subsection mode="subsection" activeColor="#FD5449" bgColor="#fff" :list="tabList" :current="current" @change="swichTo"></u-subsection>
+		<view class="form-wrap">
+			<view class="form-item">
+				
+					<u--form :labelWidth="'220rpx'" labelAlign="left">
+						<view class="form-list">
+							<u-form-item 
+							label="直播类型"
+							borderBottom
+							ref="item1">
+								<u-radio-group
+									activeColor="#FD5449"
+									v-model="radiovalue1"
+									placement="row"
+									@change="groupChange"
+								  >
+									<u-radio
+									  :customStyle="{marginRight: '80rpx'}"
+									  v-for="(item, index) in radiolist1"
+									  :key="index"
+									  :label="item.name"
+									  :name="item.name"
+									>
+									</u-radio>
+								</u-radio-group>
+							</u-form-item>
+							
+							<u-form-item
+							label="直播间初始人数"
+							borderBottom
+							ref="item1"
+							>
+								<u--input
+								border="none"
+								placeholder="请输入直播间初始人数"
+								inputAlign="right"
+								type="number"
+								></u--input>
+							</u-form-item>
+							
+							<u-form-item
+							label="观看时长"
+							borderBottom
+							ref="item1"
+							>
+								<u--input
+								border="none"
+								placeholder="请输入观看时长"
+								inputAlign="right"
+								type="number"
+								></u--input>
+							</u-form-item>
+							
+							<u-form-item
+							label="红包金额"
+							borderBottom
+							ref="item1"
+							>
+								<u--input
+								border="none"
+								placeholder="请输入红包金额"
+								inputAlign="right"
+								type="number"
+								></u--input>
+							</u-form-item>
+							
+							<u-form-item
+							label="开始时间"
+							borderBottom
+							ref="item1"
+							>
+								<u-datetime-picker :show="show" v-model="startTime"  mode="datetime"
+								></u-datetime-picker>
+								<u--input class="wd-w-full" border="none" inputAlign="right" v-model="startTime" placeholder="请选择开始时间">
+									
+								</u--input>
+								<u-button  @click="show = true" class="opa0 wd-absolute">dakai</u-button>
+							</u-form-item>
+						</view>
+						<view class="form-list">
+							<u-form-item
+							label="直播封面"
+							borderBottom
+							ref="item1"
+							>
+								<u--input
+								border="none"
+								placeholder="请上传封面"
+								inputAlign="right"
+								type="number"
+								></u--input>
+								<!-- <u-upload
+								class="wd-self-end"
+								name="1"
+								multiple
+								:maxCount="10"
+								></u-upload> -->
+							</u-form-item>
+							<u-form-item
+							label="直播间热度"
+							borderBottom
+							ref="item1"
+							>
+								<u-switch slot="right"></u-switch>
+							</u-form-item>
+							
+							<u-form-item
+							label="答题选项"
+							borderBottom
+							ref="item1"
+							>
+								<u-switch slot="right"></u-switch>
+							</u-form-item>
+							
+							<u-form-item
+							label="直播是否回放"
+							borderBottom
+							ref="item1"
+							>
+								<u-switch slot="right"></u-switch>
+							</u-form-item>
+							<u-form-item
+							label="回放结束时间"
+							ref="item1"
+							>
+								<u-datetime-picker :show="show" v-model="startTime"  mode="datetime"
+								></u-datetime-picker>
+								<u--input class="wd-w-full" border="none" inputAlign="right" v-model="startTime" placeholder="请选择开始时间">
+									
+								</u--input>
+								<u-button  @click="show = true" class="opa0 wd-absolute">dakai</u-button>
+							</u-form-item>
+							<u-form-item
+							borderBottom
+							ref="item1"
+							>
+								<u--textarea placeholderClass="test" placeholder="请输入内容" ></u--textarea>
+							</u-form-item>
+							<u-button size="small" type="error" text="提交计划"></u-button>
+						</view>
+						
+					</u--form>
+				
+				
+			</view>
+		</view>
+	</div>
+</template>
+
+<script>
+	export default {
+		data(){
+			return{
+				startTime:'',
+				show:false,
+				tabList:[
+					{name:'直播计划'},
+					{name:'短视频计划'},
+					{name:'红包计划'},
+					{name:'问卷计划'}
+				],
+				current:0,
+				radiolist1: [
+					{
+						name: '横屏直播',
+						disabled: false
+				    },
+					{
+						name: '竖屏直播',
+						disabled: false
+					},
+				  ],
+				  // u-radio-group的v-model绑定的值如果设置为某个radio的name，就会被默认选中
+				  radiovalue1: '横屏直播',
+			}
+		},
+		methods: {
+			swichTo(e) {
+				this.current = e;
+			}
+		},
+	}
+</script>
+
+<style lang="scss" scoped>
+	.uni-textarea-textarea{
+		background-color: #ff0000;
+	}
+	.wd-w-full{
+		width: 100%;
+	}
+	.opa0{
+		opacity: 0;
+	}
+	page{
+		background: #f4f4f4;
+	}
+	.u-form-item__body__right__content__slot{
+		flex-direction: row;
+		justify-content: end;
+	}
+	.u-switch{
+		align-self: flex-end;
+	}
+	.u-subsection{
+		width: 714rpx;
+		margin: 40rpx auto;
+	}
+	.form-wrap{
+		width: 100%;
+		.form-item{
+			width: 100%;
+			.form-list{
+				width: 100%;
+				background-color: #fff;
+				padding: 0 40rpx;
+				margin-bottom: 20rpx;
+			}
+		}
+	}
+	.u-upload__wrap{
+		flex-direction: row;
+		justify-content: end;
+	}
+</style>

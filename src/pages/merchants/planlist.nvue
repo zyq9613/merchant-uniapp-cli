@@ -1,0 +1,77 @@
+<template>
+	<view class="wrap">
+		<u-subsection mode="subsection" activeColor="#FD5449" bgColor="#fff" :list="tabList" :current="current" @change="swichTo"></u-subsection>
+		<view class="plan-list">
+			<text class="date">创建时间：2022-09-25  18:30:78</text>
+			<view class="data-two">
+				<text>创建人：张中美</text>
+				<text>奖励类型：积分</text>
+			</view>
+			<text>红包金额：300</text>
+			<text>开始时间：2022-09-25</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	import { doGetPlanlist } from '../../api/record'
+	export default {
+		data() {
+			return {
+				current:0,
+				tabList:[
+					{name:'直播计划'},
+					{name:'短视频计划'},
+					{name:'红包计划'},
+					{name:'问卷计划'}
+				],
+			}
+		},
+		onLoad() {
+			this.getPlanlist()
+		},
+		methods: {
+			swichTo(e) {
+				this.current = e;
+			},
+			getPlanlist(){
+				doGetPlanlist().then(res => {
+					console.log(res)
+				}).catch(error => {
+					console.log(error)
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	page{
+		background-color: #f4f4f4;
+	}
+	.wrap{
+		width: 710rpx;
+		margin: 0 auto;
+		.u-subsection{
+			margin: 40rpx 0;
+		}
+		.plan-list{
+			width: 100%;
+			background-color: #fff;
+			border-radius: 20rpx;
+			justify-content: space-around;
+			height: 266rpx;
+			padding: 20rpx 26rpx;
+			text{
+				font-size: 26rpx;
+				&.date{
+					opacity: 0.6;
+				}
+			}
+			view{
+				flex-direction: row;
+				justify-content: space-between;
+			}
+		}
+	}
+</style>

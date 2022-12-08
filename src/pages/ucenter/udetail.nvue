@@ -1,0 +1,201 @@
+<template>
+	<view class="page">
+		<view class="setting-item" @click="modifyAvatar">
+			<text class="settting-item-text">头像</text>
+			<view class="setting-more-group">
+				<image :src="userInfo.ico" class="setting-more-image" v-if="userInfo.ico"></image>
+				<image src="../../static/logo.png" class="setting-more-image" v-else></image>
+				<image class="setting-item-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+			</view>
+		</view>
+		<view class="setting-item" @click="toModify(0)">
+			<text class="settting-item-text">昵称</text>
+			<view class="setting-more-group">
+				<text class="setting-more-text">{{userInfo.username}}</text>
+				<image class="setting-item-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+			</view>
+		</view>
+		<view class="setting-item" @click="toGender">
+			<text class="settting-item-text">性别</text>
+			<view class="setting-more-group">
+				<text class="setting-more-text" v-if="gender == 0">男</text>
+				<text class="setting-more-text" v-else>女</text>
+				<image class="setting-item-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+			</view>
+		</view>
+		<view class="setting-item" @click="toModify(1)">
+			<text class="settting-item-text">手机号</text>
+			<view class="setting-more-group">
+				<text class="setting-more-text">{{userInfo.accCode}}</text>
+				<image class="setting-item-more" mode="aspectFit" src="../../static/icon_acount_more.svg"></image>
+			</view>
+		</view>
+
+
+	</view>
+</template>
+
+<script>
+	import {
+		doQueryWechatSignature
+	} from "../../api/user";
+	export default {
+		data() {
+			return {
+				login: false,
+				avatarUrl: '/static/logo.png',
+				userInfo: {},
+				gender: 0
+			}
+		},
+
+		onReady() {
+
+		},
+		onLoad() {
+			this.userInfo = getApp().globalData.userInfo;
+        
+			if (this.userInfo.sex == undefined) {
+				this.gender = 0;
+			} else {
+				this.gender = this.userInfo.sex;
+			}
+			console.info("====>userInfo:" + JSON.stringify(this.userInfo))
+		},
+
+		methods: {
+
+			modifyAvatar() {
+				uni.chooseImage({
+					count: 6, //默认9
+					sizeType: ['original', 'compressed'], //可以指定是原图还是压缩图，默认二者都有
+					sourceType: ['album'], //从相册选择
+					success: function(res) {
+						console.log(JSON.stringify(res.tempFilePaths));
+					}
+				});
+			},
+
+			toModify(type) {
+
+				let title;
+				let value;
+
+				if (type == 0) {
+					title = "修改昵称";
+					value = this.userInfo.username;
+				} else {
+					title = "修改手机号";
+					value = this.userInfo.accCode;
+				}
+
+				uni.navigateTo({
+					url: '/pages/ucenter/modify?type=' + type + '&title=' + title + '&value=' + value
+				});
+			},
+			toGender() {
+				uni.navigateTo({
+					url: '/pages/ucenter/gender'
+				});
+			},
+
+		}
+	}
+</script>
+
+<style>
+	.page {
+
+		flex-direction: column;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #FFFFFF;
+		padding-left: 30rpx;
+		padding-right: 30rpx;
+		width: 100%;
+
+	}
+
+	.setting-more-group {
+		flex-direction: row;
+		display: flex;
+		height: 40rpx;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		position: absolute;
+		right: 0rpx;
+	}
+
+	.setting-more-image {
+		width: 88rpx;
+		height: 88rpx;
+	}
+
+	.setting-more-text {
+		height: 40px;
+		font-size: 28rpx;
+		font-weight: 400;
+		color: #323232;
+		line-height: 40px;
+	}
+
+	.setting-item-more {
+		width: 40rpx;
+		height: 40rpx;
+		margin-left: 10rpx;
+		height: 100%;
+	}
+
+
+
+
+	.setting-item-group {
+
+		flex-direction: row;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #FFFFFF;
+		margin-left: 30rpx;
+		margin-right: 30rpx;
+		margin-top: 20upx;
+		width: 92%;
+		height: 100rpx;
+		border-radius: 12rpx;
+	}
+
+
+	.setting-item {
+		width: 100%;
+		align-items: center;
+		height: 140rpx;
+		border-bottom-color: #dddddd;
+		border-bottom-width: 2rpx;
+		flex-direction: row;
+	}
+
+	.settting-item-text {
+		position: absolute;
+		left: 0rpx;
+		font-size: 30rpx;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		color: #333333;
+		padding-bottom: 10rpx;
+		padding-top: 10rpx;
+	}
+
+	.promo-code {
+		display: flex;
+		font-size: 40rpx;
+		color: #fa192c;
+		text-align: center;
+		height: 100%;
+		align-items: center;
+		position: absolute;
+		right: 0rpx;
+	}
+</style>

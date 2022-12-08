@@ -1,0 +1,210 @@
+<template>
+	<div class="wrap">
+		<u-modal :show="isShowQuesModal" title="温馨提示" content='你当前答题未答完，如果取消答题，则无法获得相应的答题奖励，是否退出答题？' @cancel="cancelAns" @confirm="confirmAns" confirmColor="#448EF1" :showCancelButton="true" confirmText="确认答题" cancelText="取消答题"></u-modal>
+		<overquestion @isClose="handleOverquestionClose" @showRectiverewards="showRectiverewards" :resReward="liveRoom" :resQues="resQues" v-if="isShowOverquestion"></overquestion>
+		<view class="ques" v-if="isShowQues">
+			<view class="ques-top">
+				<text>答题领奖</text>
+				<u-icon @click="handleClose" name="close" color="#333" :size="20"></u-icon>
+			</view>
+			<view class="top">
+				<text>问题{{current+1}}:</text>
+				<u-line-progress :showText="false" :percentage="percentage" />
+				<text>{{current+1}}/{{liveRoom.topics.length}}</text>
+			</view>
+			<view class="ques-main">
+				<swiper class="swiper" :disable-touch="true" :current="current">
+					<swiper-item v-for="(item,index) in liveRoom.topics" :key="index">
+						<questionItem @resQues="handleResQues" :liveItemData="item"></questionItem>
+					</swiper-item>
+				</swiper>
+				
+				<view class="ques-bom">
+					<button class="cancel" @click="showCancleAnsModel">取消答题</button>
+					<button class="conctrl" type="primary" @click="prev" v-if="current>0">上一题</button>
+					<button class="conctrl" type="primary" @click="next" v-if="current+1<liveRoom.topics.length">下一题</button>
+					<button :disabled="resQues.error + resQues.right !== liveRoom.topics.length" type="primary" @click="commit" class="commit">提交</button>
+					<!-- <button class="cancel"></button> -->
+				</view>
+			</view>
+		</view>
+	</div>
+</template>
+
+<script>
+	import { redenvelopReceive } from '../../../api/live.js'
+	import questionItem from './question-item.nvue'
+	import overquestion from './overquestion.nvue'
+	export default {
+		data(){
+			return{
+				isShowQues:true,
+				isShowOverquestion:false,
+				isDisabled:true,
+				current:0, // 当前题目index
+				isShowQuesModal:false,
+				percentage: 0,
+				resQues:{
+					error:0,
+					right:0,
+				},
+			}
+			
+		},
+		props: {
+			liveRoom: {
+				type: Object,
+				default: {}
+			},
+		},
+		created() {
+			console.log(this.liveRoom)
+			this.percentage = ((this.current + 1) / this.liveRoom.topics.length) * 100
+		},
+		components:{
+			questionItem,overquestion
+		},
+		methods:{
+			handleOverquestionClose(){
+				this.isShowOverquestion = false
+				this.$emit('isClose')
+			},
+			showRectiverewards(){
+				this.isShowOverquestion = false;
+				this.$emit('isClose')
+				this.$emit('showRectiverewards')
+			},
+			commit(){
+				// redenvelopReceive(this.liveRoom.id).then(res => {
+				// 	console.log(res)
+				// }).catch(error => {
+				// 	console.log(error)
+				// })
+				this.isShowQues = false;
+				this.isShowOverquestion = true
+			},
+			handleResQues(value){
+				if(value == 'right'){
+					this.resQues.right++
+				}else{
+					this.resQues.error++
+				}
+				console.log(this.resQues);
+			},
+			// 上一题
+			prev(){
+				if(this.current > 0){
+					this.current--
+				}
+				this.percentage = ((this.current + 1) / this.liveRoom.topics.length) * 100
+			},
+			// 下一题
+			next(){
+				if(this.current < this.liveRoom.topics.length - 1){
+					this.current++
+				}
+				this.percentage = ((this.current + 1) / this.liveRoom.topics.length) * 100
+			},
+			// 处理继续答题 model
+			confirmAns(){
+				this.isShowQuesModal = false;
+			},
+			// 处理取消答题 model
+			cancelAns(){
+				this.isShowQuesModal = false;
+				this.$emit('isClose')
+			},
+			// 点击关闭弹窗
+			handleClose(){
+				this.$emit('isClose')
+			},
+			showCancleAnsModel(){
+				this.isShowQuesModal = true;
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.swiper{
+		height: 514rpx;
+	}
+	.u-popup{
+		flex:0;
+	}
+	.ques-bom{
+		flex-direction: row;
+		justify-content: center;
+		margin-top: 30rpx;
+		button{
+			width: 194rpx;
+			height: 80rpx;
+			border-radius: 50rpx;
+			font-size: 28rpx;
+			line-height: 80rpx;
+			margin: 0 5rpx;
+			&.cancel{
+				background-color: #fff;
+				border: 2rpx solid #bababa;
+				color: #A6A6A6;
+				width: 220rpx;
+			}
+			// &.conctrl{
+			// 	background-color: #448EF1;
+			// 	color: #fff;
+			// }
+		}
+	}
+	.wrap{
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, .6);
+		left: 0;
+		top: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		z-index: 10000;
+		}
+	.ques{
+		width: 710rpx;
+		background-color: #fff;
+		height: 862rpx;
+		border-radius: 20rpx;
+		padding: 20rpx;
+		.u-line-progress{
+			flex:1;
+			margin: 0 20rpx;
+		}
+		.ques-top{
+			width: 100%;
+			flex-direction: row;
+			align-items: center;
+			justify-content: center;
+			text{
+				align-self: center;
+				color: #EB2E3C;
+			}
+			.u-icon{
+				position: absolute;
+				right: 0;
+				top: 0;
+			}
+		}
+		.ques-main{
+			width: 100%;
+			margin-top: 20rpx;
+			
+		}
+		.top{
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			margin-top: 20rpx;
+			padding-bottom: 20rpx;
+			border-bottom: 2rpx solid rgba(151, 151, 151, 0.2);
+		}
+	}
+</style>

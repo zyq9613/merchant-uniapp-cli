@@ -1,0 +1,59 @@
+<template>
+    <view class="top">
+        <view class="top-info">
+          <image
+            :src="userInfo.avatar"
+            mode="scaleToFill"
+          />
+          <text>{{userInfo.nickname}}</text>
+        </view>
+        <my-link to="/pages/ucenter/ucenter"><u-button type="error" size="mini" text="个人中心">个人中心</u-button></my-link>
+      </view>
+</template>
+
+<script>
+export default {
+    name: 'MerchantH5CliTopMenu',
+
+    data() {
+        return {
+            
+        };
+    },
+    props:{
+        userInfo:{
+            type:Object
+        }
+    },
+
+    mounted() {
+        
+    },
+
+    methods: {
+        
+    },
+};
+</script>
+
+<style lang="scss" scoped>
+    .top{
+        width: 100%;
+        padding: 0 20rpx;
+        border-top: 2rpx solid #ccc ;
+        margin: 0 auto;
+        height: 90rpx;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: row;
+        .top-info{
+            flex-direction: row;
+            align-items: center;
+            image{
+                width: 60rpx;
+                height: 60rpx;
+                margin-right: 15rpx;
+            }
+        }
+    }
+</style>

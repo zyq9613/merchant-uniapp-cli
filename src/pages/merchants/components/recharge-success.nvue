@@ -1,0 +1,69 @@
+<template>
+    <view class="wrap">
+        <u-icon name="checkmark-circle-fill" size="48" color="#4acf9b"></u-icon>
+        <text>充值成功</text>
+        <!-- <text>¥ {{rechargeAmount * 100}}</text> -->
+        <u-button @click="handleRechargeSuccess" text="完成" shape="circle"></u-button>
+    </view>
+</template>
+
+<script>
+export default {
+    name: 'MerchantH5CliRechargeSuccess',
+    props:{
+        rechargeAmount:{
+            type:Number
+        }
+    },
+    data() {
+        return {
+            
+        };
+    },
+
+    mounted() {
+       
+    },
+
+    methods: {
+        handleRechargeSuccess(){
+            this.$Router.push({
+                name:'usercenter'
+            })
+        }
+    },
+};
+</script>
+
+<style lang="scss" scoped>
+    .wrap{
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+        align-items: center;
+        padding-top: 228rpx;
+        text{
+            &:nth-child(2){
+                margin-top: 26rpx;
+                margin-bottom: 30rpx;
+                font-size: 32rpx;
+                font-weight: 450;
+            }
+            &:nth-child(3){
+                font-size: 50rpx;
+                font-weight: 550;
+            }
+           
+        }
+        uni-button{
+            margin-top: 436rpx;
+            border-radius: 18rpx;
+            width: 342rpx;
+            height: 96rpx;
+        }
+    }
+</style>

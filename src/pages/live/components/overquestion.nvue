@@ -1,0 +1,170 @@
+<template>
+	<div class="overquestion">
+		<view class="over-top">
+			<text>答题成功</text>
+			<u-icon @click="handleClose" name="close" color="#333" :size="20"></u-icon>
+		</view>
+		<view class="over-main">
+			<view class="over-item">
+				<text class="title">答题情况</text>
+				<view class="item-main">
+					<text class="text1">题型总数：共{{resQues.error + resQues.right}}题</text>
+					<view class="item-1">
+						<text>答对：{{resQues.right}}题</text>
+						<text>答错：{{resQues.error}}题</text>
+					</view>
+				</view>
+			</view>
+			<view class="over-item">
+				<text class="title">获得奖励</text>
+				<view class="item-main">
+					<view class="item-2" v-if="resReward.rewardType == 1">
+						<image src="../../../static/usercenter/icon-01.png" mode=""></image>
+						<text>红包：¥{{(resReward.cost)/100}}</text>
+					</view>
+					<view class="item-2" v-if="resReward.rewardType == 2">
+						<image src="../../../static/usercenter/icon-02.png" mode=""></image>
+						<text>积分：{{resReward.cost}}</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		<button @click="rectiveRewards">领取奖励</button>
+	</div>
+</template>
+
+<script>
+	import { redenvelopReceive } from '../../../api/live.js'
+	export default {
+		data(){
+			return{
+			}
+		},
+		props: {
+			resQues: {
+				type: Object,
+				default: {}
+			},
+			resReward:{
+				type:Object
+			}
+		},
+		onLoad() {
+		},
+		methods:{
+			handleClose(){
+				this.$emit('isClose')
+			},
+			rectiveRewards(){
+				redenvelopReceive(this.resReward.cost,this.resReward.planId,this.resReward.id).then(res => {
+					console.log(res)
+					if(res.code == 'R000'){
+						this.$emit('showRectiverewards')
+					}else{
+						uni.showToast({
+							icon:'error',
+							title:res.msg
+						})
+					}
+				})
+				.catch(error => {
+					console.log(error)
+				})
+			}
+		}
+		
+	}
+</script>
+
+<style lang="scss" scoped>
+	.overquestion{
+		width: 710rpx;
+		padding: 30rpx;
+		background-color: #fff;
+		height: 862rpx;
+		box-sizing: border-box;
+		.over-top{
+			flex-direction: row;
+			justify-content: center;
+			align-items: center;
+			padding-bottom: 20rpx;
+			border-bottom: 2rpx solid rgba(151, 151, 151, 0.2);
+			text{
+				align-self: center;
+				color: #EB2E3C;
+				font-size: 46rpx;
+			}
+			.u-icon{
+				position: absolute;
+				right: 0;
+				top: 20;
+			}
+		}
+		.over-main{
+			padding-top: 20rpx;
+			.over-item{
+				margin-bottom: 34rpx;
+			}
+			.title{
+				text-align: center;
+			}
+			.item-main{
+				width: 640rpx;
+				padding: 20rpx;
+				background: rgba(216, 216,216,0.2);
+				border-radius: 14rpx;
+				margin-top: 18rpx;
+				.text1{
+					font-size: 32rpx;
+					line-height: 40rpx;
+					color: #323232;
+				}
+				.item-1{
+					flex-direction: row;
+					align-items: center;
+					margin-top: 40rpx;
+					
+					text{
+						color: #448EF1;
+						
+						font-size: 32rpx;
+						flex: 1;
+						&:nth-child(2){
+							color: #EB2E3C;
+							font-size: 32rpx;
+							margin-right: 0;
+						}
+					}
+				}
+				.item-2{
+					flex-direction: row;
+					align-items: center;
+					image{
+						width: 64rpx;
+						height: 64rpx;
+						margin-right: 36rpx;
+					}
+					text{
+						color: #FB4D4D;
+						font-size: 32rpx;
+					}
+					&:nth-child(2){
+						margin-top: 36rpx;
+						text{
+							color: #D76E1C;
+						}
+					}
+				}
+			}
+		}
+		button{
+			width: 547rpx;
+			height: 80rpx;
+			border-radius: 40rpx;
+			background-color: #448EF1;
+			color: #fff;
+			font-size: 32rpx;
+			margin: 0 auto;
+		}
+	}
+</style>

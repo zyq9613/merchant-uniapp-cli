@@ -1,0 +1,470 @@
+<template>
+	<view class="wrap" id="content">
+		<u-overlay :show="isShowSharePop" @click="isShowSharePop = false">
+			<image class="share-img" src="../../static/usercenter/share.png" mode=""></image>
+		</u-overlay>
+		<view class="tabs">
+			<view class="tabs-container">
+				<view class="uni-tab-item" v-for="(tab,index) in tabList" :key="tab.id" :id="tab.id" :ref="'tabitem'+index"
+					:data-id="index" :data-current="index" @click="ontabtap">
+					<text class="uni-tab-item-title"
+						:class="tabIndex==index ? 'uni-tab-item-title-active' : ''">{{tab.name}}</text>
+		
+				</view>
+			</view>
+			<swiper :disable-touch="true" class="tab-box" ref="swiper1" :current="tabIndex" :duration="300" @change="onswiperchange"
+				@transition="onswiperscroll" @animationfinish="animationfinish" @onAnimationEnd="animationfinish">
+				<swiper-item class="swiper-item" v-for="(page, index) in tabList" :key="index">
+					<livePage @submitToShare="submitToShare" :shareCode="shareCode" class="page-item" :type="page.type" :ref="'page' + index"></livePage>
+				</swiper-item>
+			</swiper>
+			
+		</view>
+		<u-tabbar
+			:value="0"
+			:fixed="true"
+			:placeholder="false"
+			:safeAreaInsetBottom="true"
+			inactiveColor="#000"
+			activeColor="#FD5449"
+		>
+			<u-tabbar-item v-for="(item,index) in tabbarList" :key="index" :text="item.text" :icon="item.icon" @click="swichTab" ></u-tabbar-item>
+		</u-tabbar>
+	</view>
+	
+</template>
+
+<script>
+	import {
+			doQueryWechatSignature,
+		} from "../../api/user";
+	import Wechat from 'jweixin-module';
+	// #ifdef APP-PLUS
+	const dom = weex.requireModule('dom');
+	// #endif
+	import { mapGetters } from 'vuex'
+	import livePage from './live-page.nvue';
+	import { doQueryAccount } from '@/api/user'
+	// 缓存每页最多
+	const MAX_CACHE_DATA = 100;
+	// 缓存页签数量
+	const MAX_CACHE_PAGE = 3;
+	const TAB_PRELOAD_OFFSET = 1;
+
+	export default {
+		components: {
+			livePage
+		},
+		computed: {
+			...mapGetters([
+				'tabbarList',
+			])
+		},
+		data() {
+			return {
+				isShowSharePop:false,
+				tabList: [{
+					id: "tab01",
+					name: '全部',
+					type: ""
+				}, {
+					id: "tab02",
+					name: '直播',
+					type: "1"
+				}, {
+					id: "tab03",
+					name: '视频',
+					type: "2"
+				}],
+				tabIndex: 0,
+				cacheTab: [],
+				scrollInto: "",
+				navigateFlag: false,
+				indicatorLineLeft: 0,
+				indicatorLineWidth: 0,
+				isTap: false,
+				shareCode:getApp().globalData.shareCode
+			}
+		},
+		
+		mounted(){
+			// var a = document.getElementsByClassName('uni-page-head-hd')[0];
+			// a.style.display = 'none';
+		},
+		onReady() {
+			this._lastTabIndex = 0;
+			this.swiperWidth = 0;
+			this.tabbarWidth = 0;
+			this.tabListSize = {};
+			this._touchTabIndex = 0;
+
+			this.pageList = [];
+			for (var i = 0; i < this.tabList.length; i++) {
+				let item = this.$refs['page' + i]
+				if (Array.isArray(item)) {
+					this.pageList.push(item[0])
+				} else {
+					this.pageList.push(item)
+				}
+			}
+			this.switchTab(this.tabIndex);
+			console.log(getApp().globalData.shareCode)
+			this.selectorQuery();
+		},
+		onLoad() {
+			this.doGetWechatSignature()
+		},
+		methods: {
+			submitToShare(value){
+				let that = this;
+				Wechat.ready(function () {   //需在用户可能点击分享按钮前就先调用
+				  Wechat.updateAppMessageShareData({ 
+				    title: value.title, // 分享标题
+				    desc: '点击进入直播间领红包了', // 分享描述
+				    link: value.href, // 分享链接，该链接域名或路径必须与当前页面对应的公众号 JS 安全域名一致
+				    imgUrl: value.liveCover, // 分享图标
+				    success: function (res) {
+						console.log(res)
+				     if(res.errMsg){
+						 that.isShowSharePop = true;
+					 }
+				    }
+				  })
+				}); 
+			},
+			doGetWechatSignature(callback) {
+				let redirect_uri = window.location.href.split("#")[0];
+				let that = this;
+				doQueryWechatSignature(redirect_uri)
+					.then(result => {
+						console.log(result)
+						if (result.code == 'R000' && result.data != undefined) {
+							Wechat.config({
+								debug: false, // 开启调试模式,调用的所有 api 的返回值会在客户端 alert 出来，若要查看传入的参数，可以在 pc 端打开，参数信息会通过 log 打出，仅在 pc 端时才会打印。
+								appId: that.$appId, // 必填，公众号的唯一标识
+								timestamp: result.data.timestamp, // 必填，生成签名的时间戳
+								nonceStr: result.data.nonceStr, // 必填，生成签名的随机串
+								signature: result.data.signature, // 必填，签名
+								jsApiList: ['updateAppMessageShareData','updateTimelineShareData'] // 必填，需要使用的 JS 接口列表
+							});
+							if (typeof callback === 'function') {
+								callback(result.data)
+							}
+						}
+					})
+					.catch(error => {
+						console.log(error);
+					});
+			},
+			swichTab(e){
+				this.$Router.pushTab('/' + this.tabbarList[e].pagePath)
+			},
+			ontabtap(e) {
+				let index = e.target.dataset.current || e.currentTarget.dataset.current;
+				//let offsetIndex = this._touchTabIndex = Math.abs(index - this._lastTabIndex) > 1;
+
+				// #ifdef APP-PLUS || H5 || MP-WEIXIN || MP-QQ
+				this.isTap = true;
+				var currentSize = this.tabListSize[index];
+				this.updateIndicator(currentSize.left, currentSize.width);
+				this._touchTabIndex = index;
+				// #endif
+
+				this.switchTab(index);
+			},
+			onswiperchange(e) {
+				// 注意：百度小程序会触发2次
+
+				// #ifndef APP-PLUS || H5 || MP-WEIXIN || MP-QQ
+				let index = e.target.current || e.detail.current;
+				this.switchTab(index);
+				// #endif
+			},
+			onswiperscroll(e) {
+				if (this.isTap) {
+					return;
+				}
+				var offsetX = e.detail.dx;
+				var preloadIndex = this._lastTabIndex;
+				if (offsetX > TAB_PRELOAD_OFFSET) {
+					preloadIndex++;
+				} else if (offsetX < -TAB_PRELOAD_OFFSET) {
+					preloadIndex--;
+				}
+				if (preloadIndex === this._lastTabIndex || preloadIndex < 0 || preloadIndex > this.pageList.length - 1) {
+					return;
+				}
+				if (this.pageList[preloadIndex].dataList.length === 0) {
+					this.loadTabData(preloadIndex);
+				}
+				// #ifdef APP-PLUS || H5 || MP-WEIXIN || MP-QQ
+				var percentage = Math.abs(this.swiperWidth / offsetX);
+				var currentSize = this.tabListSize[this._lastTabIndex];
+				var preloadSize = this.tabListSize[preloadIndex];
+				var lineL = currentSize.left + (preloadSize.left - currentSize.left) / percentage;
+				var lineW = currentSize.width + (preloadSize.width - currentSize.width) / percentage;
+				this.updateIndicator(lineL, lineW);
+				// #endif
+			},
+			animationfinish(e) {
+				// #ifdef APP-PLUS || H5 || MP-WEIXIN || MP-QQ
+				let index = e.detail.current;
+				if (this._touchTabIndex === index) {
+					this.isTap = false;
+				}
+				this._lastTabIndex = index;
+				this.switchTab(index);
+				this.updateIndicator(this.tabListSize[index].left, this.tabListSize[index].width);
+				// #endif
+			},
+			selectorQuery() {
+				// #ifdef APP-NVUE
+				dom.getComponentRect(this.$refs.tabbar1, res => {
+					this.tabbarWidth = res.size.width;
+				});
+				dom.getComponentRect(this.$refs['swiper1'], res => {
+					this.swiperWidth = res.size.width;
+				});
+				// for (var i = 0; i < this.tabList.length; i++) {
+				// 	this.getElementSize(dom, this.$refs['tabitem' + i][0], i);
+				// }
+				// 因 nvue 暂不支持 class 查询
+				var queryTabSize = uni.createSelectorQuery().in(this);
+				for (var i = 0; i < this.tabList.length; i++) {
+					queryTabSize.select('#' + this.tabList[i].id).boundingClientRect();
+				}
+				queryTabSize.exec(rects => {
+					rects.forEach((rect) => {
+						this.tabListSize[rect.dataset.id] = rect;
+					})
+					this.updateIndicator(this.tabListSize[this.tabIndex].left, this.tabListSize[this.tabIndex]
+						.width);
+					this.switchTab(this.tabIndex);
+				});
+				// #endif
+
+				// #ifdef MP-WEIXIN || H5 || MP-QQ
+				uni.createSelectorQuery().in(this).select('.tab-box').fields({
+					dataset: true,
+					size: true,
+				}, (res) => {
+					this.swiperWidth = res.width;
+				}).exec();
+				uni.createSelectorQuery().in(this).selectAll('.uni-tab-item').boundingClientRect((rects) => {
+					rects.forEach((rect) => {
+						this.tabListSize[rect.dataset.id] = rect;
+					})
+					this.updateIndicator(this.tabListSize[this.tabIndex].left, this.tabListSize[this.tabIndex]
+						.width);
+				}).exec();
+				// #endif
+			},
+			getElementSize(dom, ref, id) {
+				dom.getComponentRect(ref, res => {
+					this.tabListSize[id] = res.size;
+				});
+			},
+			updateIndicator(left, width) {
+				this.indicatorLineLeft = left;
+				this.indicatorLineWidth = width;
+			},
+			switchTab(index) {
+				if (this.pageList[index].dataList.length === 0) {
+					this.loadTabData(index);
+				}
+
+				if (this.tabIndex === index) {
+					return;
+				}
+
+				// 缓存 tabId
+				if (this.pageList[this.tabIndex].dataList.length > MAX_CACHE_DATA) {
+					let isExist = this.cacheTab.indexOf(this.tabIndex);
+					if (isExist < 0) {
+						this.cacheTab.push(this.tabIndex);
+					}
+				}
+
+				this.tabIndex = index;
+
+				// #ifdef APP-NVUE
+				this.scrollTabTo(index);
+				// #endif
+				// #ifndef APP-NVUE
+				this.scrollInto = this.tabList[index].id;
+				// #endif
+
+				// 释放 tabId
+				if (this.cacheTab.length > MAX_CACHE_PAGE) {
+					let cacheIndex = this.cacheTab[0];
+					this.clearTabData(cacheIndex);
+					this.cacheTab.splice(0, 1);
+				}
+			},
+			scrollTabTo(index) {
+				const el = this.$refs['tabitem' + index][0];
+				let offset = 0;
+				// TODO fix ios offset
+				if (index > 0) {
+					offset = this.tabbarWidth / 2 - this.tabListSize[index].width / 2;
+					if (this.tabListSize[index].right < this.tabbarWidth / 2) {
+						offset = this.tabListSize[0].width;
+					}
+				}
+				dom.scrollToElement(el, {
+					offset: -offset
+				});
+			},
+			loadTabData(index) {
+				this.pageList[index].loadData();
+			},
+			clearTabData(index) {
+				this.pageList[index].clear();
+			}
+		}
+	}
+</script>
+
+<style>
+	/* #ifdef H5 */
+	 /* 页面A */
+	 uni-page[data-page="pages/A/A"] .uni-page-head-hd {
+		display: none;
+	 }
+	 /* #endif */
+	/* #ifndef APP-PLUS */
+	page {
+		width: 100%;
+		min-height: 100%;
+		display: flex;
+	}
+
+	/* #endif */
+	.wrap{
+		width: 100%;
+		min-height: 100%;
+	}
+	.tabs {
+		/* flex: 0; */
+		flex-direction: column;
+		overflow: hidden;
+		background-color: #F6F6F6;
+		height: calc(100% - 170rpx);
+		/* min-height: 100%; */
+		/* #ifdef MP-ALIPAY || MP-BAIDU */
+		height: 100vh;
+		/* #endif */
+	}
+
+	.tabs-container {
+		flex-direction: row;
+		width: 100%;
+		padding-left: 30rpx;
+		align-items: center;
+
+	}
+	.share-img{
+		width: 500rpx;
+		height: 314rpx;
+		position: absolute;
+		right: 40rpx;
+	}
+	.tab-bar {
+		/* #ifdef APP-PLUS */
+		width: 750rpx;
+		/* #endif */
+		height: 42px;
+		flex-direction: row;
+		/* #ifndef APP-PLUS */
+		white-space: nowrap;
+		/* #endif */
+	}
+
+	/* #ifndef APP-NVUE */
+	.tab-bar ::-webkit-scrollbar {
+		display: none;
+		width: 0 !important;
+		height: 0 !important;
+		-webkit-appearance: none;
+		background: transparent;
+	}
+
+	/* #endif */
+
+	.scroll-view-indicator {
+		position: relative;
+		height: 2px;
+		background-color: transparent;
+	}
+
+	.scroll-view-underline {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 0;
+		background-color: #007AFF;
+	}
+
+	.scroll-view-animation {
+		transition-duration: 0.2s;
+		transition-property: left;
+	}
+
+	.tab-bar-line {
+		height: 1px;
+		background-color: #cccccc;
+	}
+
+	.tab-box {
+		width: 100%;
+		flex: 1;
+	}
+
+	.uni-tab-item {
+		height: 100rpx;
+		margin-right: 20rpx;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.uni-tab-item-title {
+		background: #FFFFFF;
+		color: #323232;
+		padding-top: 6rpx;
+		padding-bottom: 6rpx;
+		padding-left: 30rpx;
+		padding-right: 30rpx;
+		opacity: 0.5;
+		border-radius: 28rpx;
+	}
+
+	.uni-tab-item-title-active {
+		color: #ffffff;
+		opacity: 1;
+		background-color: #FC524B;
+		font-weight: bold;
+	}
+
+	.tab-indicator {
+		width: 40rpx;
+		height: 10rpx;
+		margin-top: 2rpx;
+	}
+
+	.swiper-item {
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.page-item {
+		flex: 1;
+		flex-direction: row;
+		position: absolute;
+		background-color: #F6F6F6;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+	}
+</style>

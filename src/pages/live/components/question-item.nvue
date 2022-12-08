@@ -1,0 +1,112 @@
+<template>
+	<view class="ques-item">
+		<text class="title">{{liveItemData.title}}</text>
+		<view class="option">
+			<view class="option-item" :class="{success:isRight && liveItemData.answer == 'A',error:isRight && (isChoose == 'A' && liveItemData.answer !== 'A')}" @click="handleChoose({choose:'A',answer:liveItemData.answer})">
+				<text>A：{{liveItemData.a}}</text>
+				<view class="choose-main" v-if="isRight && (isChoose == 'A' || liveItemData.answer == 'A') ">
+					<u-icon color="#448EF1" v-if="liveItemData.answer == 'A'" name="checkmark"></u-icon>
+					<u-icon color="#EB2E3C" v-if="liveItemData.answer !== 'A'" name="close"></u-icon>
+				</view>
+			</view>
+			
+			<view class="option-item" :class="{success:isRight && liveItemData.answer == 'B',error:isRight && (isChoose == 'B' && liveItemData.answer !== 'B')}" @click="handleChoose({choose:'B',answer:liveItemData.answer})">
+				<text>B：{{liveItemData.b}}</text>
+				<view class="choose-main" v-if="isRight && (isChoose == 'B' || liveItemData.answer == 'B')">
+					<u-icon color="#448EF1" v-if="liveItemData.answer == 'B'" name="checkmark"></u-icon>
+					<u-icon color="#EB2E3C" v-if="liveItemData.answer !== 'B'" name="close"></u-icon>
+				</view>
+			</view>
+			<view class="option-item" :class="{success:isRight && liveItemData.answer == 'C',error:isRight && (isChoose == 'C' && liveItemData.answer !== 'C')}" @click="handleChoose({choose:'C',answer:liveItemData.answer})">
+				<text>C：{{liveItemData.c}}</text>
+				<view class="choose-main" v-if="isRight && (isChoose == 'C' || liveItemData.answer == 'C')">
+					<u-icon color="#448EF1" v-if="liveItemData.answer == 'C'" name="checkmark"></u-icon>
+					<u-icon color="#EB2E3C" v-if="liveItemData.answer !== 'C'" name="close"></u-icon>
+				</view>
+			</view>
+			
+			<view class="option-item" :class="{success:isRight && liveItemData.answer == 'D',error:isRight && (isChoose == 'D' && liveItemData.answer !== 'D')}" @click="handleChoose({choose:'D',answer:liveItemData.answer})">
+				<text>D：{{liveItemData.d}}</text>
+				<view class="choose-main" v-if="isRight && (isChoose == 'D' || liveItemData.answer == 'D')">
+					<u-icon color="#448EF1" v-if="liveItemData.answer == 'D'" name="checkmark"></u-icon>
+					<u-icon color="#EB2E3C" v-if="liveItemData.answer !== 'D'" name="close"></u-icon>
+				</view>
+			</view> 
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				choose:null,
+				isRight:false,
+				isChoose:false,
+			}
+		},
+		created() {
+			console.log(this.liveItemData)
+		},
+		props: {
+			liveItemData: {
+				type: Object,
+				default: {}
+			}
+		},
+		methods: {
+			handleChoose(e) {
+				if(this.isRight){
+					return;
+				}
+				if(e.choose == e.answer){
+					this.$emit('resQues','right')
+				}else{
+					this.$emit('resQues','error')
+				}
+				this.isRight = true;
+				this.isChoose = e.choose;
+			}
+		},
+	}
+</script>
+
+<style lang="scss" scoped>
+			.ques-item{
+				
+				.title{
+					font-size: 26rpx;
+					color: #323232;
+				}
+				.option{
+					margin-top: 46rpx;
+					.option-item{
+						width: 100%;
+						height: 88rpx;
+						border-radius: 44rpx;
+						margin-bottom: 20rpx;
+						flex-direction: row;
+						align-items: center;
+						justify-content: space-between;
+						background-color: #f4f4f4;
+						padding: 0 30rpx;
+						text{
+							font-size: 26rpx;
+							color: #323232;
+						}
+						&.success{
+							background-color: #C8E0FF;
+							.u-icon{
+								color: #C8E0FF;
+							}
+						}
+						&.error{
+							background-color: #FFBDC2;
+							.u-icon{
+								color: #FFBDC2;
+							}
+						}
+					}
+				}
+			}
+</style>

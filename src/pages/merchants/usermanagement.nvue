@@ -1,0 +1,189 @@
+<template>
+	<view class="wrap">
+		<z-paging ref="paging" v-model="dataList" @query="queryList">
+			<u-tabs lineColor="#f56c6c" slot="top" :list="tabbarList" @click="changeTab"></u-tabs>
+			<view class="item" v-for="(item,index) in dataList" :key="item.id">
+				<view>
+					<image :src="item.ico" mode=""></image>
+					<view class="item-wrap">
+					<view class="">
+						<text>ID：{{item.id}}</text>
+						<text>昵称：{{item.nickName}}</text>
+						<text>{{item.createTime}}</text>
+					</view>
+					</view>
+				</view>
+				
+				<u-button v-if="states == 1" text="审核" @click="reviewedHandled(item.id)" type="success" size="mini" ></u-button>
+				<u-button v-else text="拉黑" @click="blockedHandler(item.id)" type="error" size="mini" ></u-button>
+			</view>
+		</z-paging>
+	</view>
+</template>
+
+<script>
+	import { doGetUserlist, handleReviewed, handleBlocked } from '../../api/user'
+	export default {
+		data() {
+			return {
+				isLoading:false,
+				states:0,
+				tabbarList:[
+					{
+						name:'已审核会员',
+						states:0,
+					},
+					{
+						name:'待审核会员',
+						states:1,
+					}
+				],
+				dataList:[
+					// name:'张军衔'
+					// tel:'张军衔'
+					// name:'张军衔'
+					// name:'张军衔'
+				],
+			}
+		},
+		onLoad(){
+			// this.getUserlist();
+		},
+		methods: {
+			// 处理审核
+			reviewedHandled(id){
+				this.isLoading = true;
+				handleReviewed(id).then(res => {
+					console.log(res)
+					if(res.code == 'R000'){
+						this.isLoading = false;
+						uni.showToast({
+							title:'审核成功',
+							icon:'success',
+						})
+						this.$refs.paging.reload();
+					}else{
+						this.isLoading = false;
+						uni.showToast({
+							title:`错误代码${res.code}`,
+							icon:'error',
+						})
+					}
+				}).catch(error => {
+					this.isLoading = false;
+					uni.showToast({
+						title:`错误代码${error.code}`,
+						icon:'error',
+					})
+				})
+			},
+			// 处理拉黑
+			blockedHandler(id){
+				this.isLoading = true;
+				console.log(id)
+				handleBlocked(id).then(res => {
+					console.log(res)
+					if(res.code == 'R000'){
+						this.isLoading = false;
+						uni.showToast({
+							title:'拉黑成功',
+							icon:'success',
+						})
+						this.$refs.paging.reload();
+					}else{
+						this.isLoading = false;
+						uni.showToast({
+							title:`错误代码${res.code}`,
+							icon:'error',
+						})
+					}
+				}).catch(error => {
+					uni.showToast({
+						title:`错误代码${error.code}`,
+						icon:'error',
+					})
+				})
+			},
+			changeTab(e){
+				this.states = e.states;
+				this.$refs.paging.reload();
+			},
+			queryList(pageNo, pageSize) {
+				//这里的pageNo和pageSize会自动计算好，直接传给服务器即可
+				//这里的请求只是演示，请替换成自己的项目的网络请求，并在网络请求回调中通过this.$refs.paging.complete(请求回来的数组)将请求结果传给z-paging
+				doGetUserlist(this.states,pageNo,pageSize).then(res => {
+					console.log(res)
+					//请勿在网络请求回调中给dataList赋值！！只需要调用complete就可以了
+					this.$refs.paging.complete(res.data.datas);
+				}).catch(res => {
+					//如果请求失败写this.$refs.paging.complete(false)，会自动展示错误页面
+					//注意，每次都需要在catch中写这句话很麻烦，z-paging提供了方案可以全局统一处理
+					//在底层的网络请求抛出异常时，写uni.$emit('z-paging-error-emit');即可
+					this.$refs.paging.complete(false);
+				})
+			},
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	page{
+		background-color: #f6f6f6;
+	}
+	.load{
+		position: absolute;
+		width: 300rpx;
+		height: 300rpx;
+		background-color: rgba(0, 0, 0, 0.3);
+		border-radius: 10rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		top: 30%;
+		left: 50%;
+		margin-left: -150rpx;
+	}
+	.wrap{
+		width: 710rpx;
+		margin: 0 auto;
+		min-height: 100%;
+		
+	}
+	.u-tabs{
+		width: 710rpx;
+		margin: 20rpx auto 0;
+	}
+	.item{
+		width: 710rpx;
+		border-radius: 10rpx;
+		background-color: #fff;
+		flex-direction: row;
+		margin: 25rpx auto 0rpx;
+		padding: 15rpx 20rpx;
+		align-items: center;
+		justify-content: space-between;
+		box-shadow:rgba($color: #000000, $alpha: 0.5) 0 0 20rpx 1rpx;
+		>view{
+			flex-direction: row;
+			align-items: center;
+		}
+		image{
+			width: 100rpx;
+			height: 100rpx;
+			border-radius: 50%;
+			margin-right: 20rpx;
+		}
+		.item-wrap{
+			text{
+				font-size: 28rpx;
+				line-height: 45rpx;
+				&:nth-child(3){
+					opacity: 0.5;
+				}
+			}
+		}
+		.u-button{
+			flex:0;
+		}
+	}
+</style>

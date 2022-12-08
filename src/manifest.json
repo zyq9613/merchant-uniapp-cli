@@ -1,6 +1,6 @@
 {
-    "name" : "新闻资讯",
-    "appid" : "",
+    "name" : "ZcLiveMaster",
+    "appid" : "__UNI__FC77459",
     "description" : "基于uni-app开发的新闻/资讯类App模板",
     "versionName" : "3.1.23",
     "versionCode" : 1,
@@ -15,7 +15,9 @@
         "usingComponents" : true,
         "nvueCompiler" : "uni-app",
         /* 5+App特有相关 */
-        "modules" : {},
+        "modules" : {
+            "Share" : {}
+        },
         /* 模块配置 */
         "distribute" : {
             /* 应用发布信息 */
@@ -39,7 +41,13 @@
             },
             /* ios打包配置 */
             "sdkConfigs" : {
-                "ad" : {}
+                "ad" : {},
+                "share" : {
+                    "weixin" : {
+                        "appid" : "wx5097ef3c53eeb967",
+                        "UniversalLinks" : ""
+                    }
+                }
             },
             "icons" : {
                 "android" : {
@@ -79,7 +87,8 @@
     "mp-weixin" : {
         "appid" : "",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : false,
+            "es6" : true
         },
         "usingComponents" : true
     },
@@ -93,6 +102,19 @@
         "usingComponents" : true
     },
     "h5" : {
+        "devServer" : {
+            "allowedHosts" : [ "h5.linghongbao.net" ],
+            "proxy" : {
+                "/sns/oauth2/access_token" : {
+                    "target" : "https://api.weixin.qq.com",
+                    "pathRewrite" : {
+                        "^/sns" : ""
+                    }
+                }
+            },
+            "disableHostCheck" : true,
+            "port" : 80
+        },
         "router" : {
             "base" : "./",
             "mode" : "hash"
@@ -102,7 +124,8 @@
             "treeShaking" : {
                 "enable" : true
             }
-        }
+        },
+        "title" : "众诚直播"
     },
     "vueVersion" : "2"
 }

@@ -1,0 +1,270 @@
+<template>
+	<div class="wrap">
+		<view class="hb">
+			<image src="../../../static/live/bg.png" mode=""></image>
+			
+			<view class="main-wrap">
+				<view class="over-state" v-if="hbstate == 2">
+					<text class="title">红包</text>
+					<text class="man">2000人已参与</text>
+					<button type="default">红包已领完</button>
+				</view>
+				
+				<view class="no-state" v-if="hbstate == 0">
+					<text class="title" v-if="liveRoom.rewardType == 1">红包</text>
+					<text class="title" v-else>积分</text>
+					<!-- <text class="man">1</text> -->
+					<circle-progress-bar :pro="pro"
+					:start="0"
+					:size="100" 
+					unit="px" 
+					:border_width="5" 
+					:animate="false"
+					background="#FA4240"
+					border_color="#FFF3AE"
+					border_back_color="#C8211A"
+					>
+						<view>
+							<view class="count-down">
+								<view>
+									<u-count-down ref="countDownPop" :autoStart="false" :time="overTime" @change="timeChange" @finish="timeFinish">
+										<div class="data-wrap" v-if="timeData.minutes >= 1">
+											<text>{{ (timeData.hours>=10?timeData.hours:'0'+timeData.hours) + ':' + (timeData.minutes>=10?timeData.minutes:'0'+timeData.minutes) + ':' + (timeData.seconds>10?timeData.seconds:'0'+timeData.seconds) }}</text>
+											<div style="text-align: center;">可领</div>
+										</div>
+										
+										<text v-if="timeData.days == 0 && timeData.hours == 0 && timeData.minutes == 0 &&  timeData.seconds > 0" style="font-size: 48rpx;">{{timeData.seconds>=10?timeData.seconds:'0'+timeData.seconds}}</text>
+										<image @click="receiveHb" v-if="isShowOpen" class="openhb" src="../../../static/live/3.png" mode=""></image>
+									</u-count-down>
+									
+								</view>
+								
+								
+							</view>
+							
+						</view>
+					</circle-progress-bar>
+				</view>
+				
+			</view>
+		</view>
+		
+		<u-icon @click="handleClose" name="close" color="#fff" :size="28" :top="0"></u-icon>
+	</div>
+</template>
+
+<script>
+	import { redenvelopReceive } from '../../../api/live.js'
+	import circleProgressBar from './circle-progress-bar'
+	export default {
+		components:{
+			circleProgressBar
+		},
+		props: {
+			liveRoom: {
+				type: Object,
+			},
+			overTime: {
+				type: Number,
+			},
+			isCountdownStart: {
+				type: Boolean,
+			},
+		},
+		mounted(){
+			if(this.isCountdownStart){
+				console.log(this.$refs.countDown)
+				this.$refs.countDownPop.start();
+			}
+		},
+		created() {
+			console.log(this.liveRoom)
+			
+			this.viewLength = this.liveRoom.viewLength * 60 *1000;
+		},
+		data(){
+			return{
+				viewLength:0,
+				// overTime:0, // 剩余时间
+				hbData:{},   // 红包数据
+				hbstate:0,   //红包状态 已领取 1 未领取 0 领取完 3
+				isShowOpen:false,
+				timeData:{},
+				pro:0,
+				time: 0
+			}
+		},
+		methods:{
+			// 处理领红包
+			receiveHb(){
+				redenvelopReceive(this.liveRoom.cost,this.liveRoom.planId,this.liveRoom.id
+				).then(res => {
+					console.log(res)
+					if(res.code == 'R000'){
+						this.$emit('showRectiverewards',true)
+						this.$emit('isClose')
+					}else{
+						uni.showToast({
+							icon:'error',
+							title:res.msg
+						})
+					}
+				})
+				.catch(error => {
+					console.log(error)
+				})
+			},
+			timeFinish(e){
+				this.isShowOpen = true;
+			},
+			timeChange(e){
+				let time = e.days * 24 * 60 * 60 * 1000 + e.hours * 60 * 60 * 1000 + e.minutes * 60 * 1000 + e.seconds * 1000 + e.milliseconds;
+				this.timeData = e;
+				this.pro = 1 - (time / this.viewLength);
+			},
+			handleClose(){
+				this.$emit('isClose')
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	
+	.openhb{
+		width: 200rpx !important;
+		height: 200rpx !important;
+	}
+	
+	page{
+		position: absolute;
+		width: 100%;
+		height: 100%;
+	}
+	.date-wrap{
+		color: #FFF3AE;
+	}
+	.wrap{
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, .6);
+		left: 0;
+		top: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		z-index: 10000;
+		.hb{
+			width: 100%;
+			padding: 20rpx;
+			height: 900rpx;
+			// position: absolute;
+			// margin-top: -320rpx;
+			>image{
+				position: absolute;
+				width: 100%;
+				height: 900rpx;
+				top: 0;
+				left: 0;
+			}
+			
+		}
+	}
+	.data-wrap{
+		align-items: center;
+	}
+	.main-wrap{
+		justify-content: center;
+		align-items: center;
+		padding-top: 200rpx;
+		.over-state{
+			align-items: center;
+			button{
+				margin-top: 180rpx;
+				width: 270rpx;
+				height: 70rpx;
+				line-height: 70rpx;
+				text-align: center;
+				font-size: 36rpx;
+				color: #FFFDC3;
+				background-color: #F63633;
+			}
+			>text{
+				font-size: 32rpx;
+				color: #FFF3AE;
+				
+			}
+			.man{
+				margin: 30rpx 0 45rpx;
+			}
+		}
+		
+		.no-state{
+			align-items: center;
+			>text{
+				font-size: 32rpx;
+				color: #FFF3AE;
+				margin-bottom: 120rpx;
+			}
+			.man{
+				margin: 30rpx 0 45rpx;
+			}
+		}
+		.is-state{
+			
+			align-items: center;
+			>text{
+				font-size: 36rpx;
+				color: #D55656;
+				font-weight: bold;
+				&:nth-child(3){
+					font-weight: normal;
+					margin-top: 10rpx;
+				}
+			}
+			view{
+				flex-direction: row;
+				margin-left: -10rpx;
+				justify-content: center;
+				margin-top: 10rpx;
+				align-items: baseline;
+				text{
+					margin: 0 5rpx;
+					font-size: 36rpx;
+					font-weight: bold;
+					color:#D55656;
+					&:nth-child(2){
+						font-size: 72rpx;
+					}
+				}
+			}
+			button{
+				margin-top: 120rpx;
+				width: 270rpx;
+				height: 70rpx;
+				line-height: 70rpx;
+				text-align: center;
+				font-size: 36rpx;
+				color: #FA4240;
+				background-image: linear-gradient(#FCF5DD,#F3C77A);
+			}
+		}
+	}
+	.count-down{
+		align-items: center;
+		color: #FFF3AE;
+		font-size: 26rpx;
+		.single-num{
+			font-size: 48rpx !important;
+			color: #FFF3AE;
+		}
+	}
+	.u-count-down__text{
+		color: #ff0000;
+	}
+	.u-icon{
+		
+	}
+</style>

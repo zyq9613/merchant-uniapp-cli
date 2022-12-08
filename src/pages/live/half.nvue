@@ -1,0 +1,1161 @@
+<template>
+  <view class="page">
+    <top-menu :userInfo="{avatar:this.avatar,nickname:this.nickname}"></top-menu>
+    <video
+      id="livePlayer"
+      class="video"
+      object-fit="contain"
+      :src="liveRoom.replayurl"
+      :controls="false"
+      :autoplay="true"
+      :danmu-btn="false"
+      :enable-danmu="false"
+      :muted="false"
+      :show-loading="true"
+      :show-center-play-btn="isShowPlaybtn"
+      :enable-progress-gesture="false"
+      :show-mute-btn="false"
+      @play="onstart"
+      @pause="onpause"
+      @ended="onfinish"
+      @error="onfail"
+      @waiting="waiting"
+      @progress="progress"
+      auto-pause-if-navigate="true"
+      auto-pause-if-open-native="true"
+      :show-fullscreen-btn="false"
+      @timeupdate="timeupdate"
+      @loadedmetadata="loadedmetadata"
+    >
+    <u-loading-icon :show="isLoading" mode="semicircle" color="#fff" size="36"></u-loading-icon>
+  </video>
+    <!-- 先注释答题记录 -->
+    <u-modal
+      :show="isShowQuesModal"
+      title="是否答题"
+      content="答题领取奖励，是否开始答题？"
+      @cancel="cancelAns"
+      @confirm="beginAns"
+      confirmColor="#448EF1"
+      :showCancelButton="true"
+      confirmText="确认答题"
+      cancelText="取消答题"
+    ></u-modal>
+    <hb
+      :isCountdownStart="isCountdownStart"
+      :overTime="countDownTime"
+      :liveRoom="currentRedBag"
+      v-if="isShowPop"
+      @showRectiverewards="showRectiverewards"
+      @isClose="handlePopClose"
+    ></hb>
+    <question
+      @showRectiverewards="showRectiverewards"
+      :liveRoom="questionRedBag"
+      v-if="isShowQues"
+      @isClose="handleQuesClose"
+    ></question>
+    <rectiverewards
+      @overRective="handleOverRective"
+      :liveRoom="liveRoom"
+      v-if="isShowRectiverewards"
+    ></rectiverewards>
+    <typePreview
+      @isClose="handlePreClose"
+      v-if="isShowTypePreview"
+      :liveRoom="liveRoom"
+    ></typePreview>
+    <div class="tabs">
+      <view
+        v-for="(tab, index) in tabBars"
+        :key="tab.id"
+        class="uni-tab-item"
+        :id="tab.id"
+        :data-current="index"
+        @click="ontabtap"
+      >
+        <text
+          class="uni-tab-item-title"
+          :class="tabIndex == index ? 'uni-tab-item-title-active' : ''"
+          >{{ tab.name }}</text
+        >
+      </view>
+    </div>
+
+    <!-- 直播互动 -->
+    <view class="live-interact-group" v-if="tabIndex == 0">
+      <scroll-view
+        class="comment-group"
+        id="commentContainer"
+        scroll-y="true"
+        show-scrollbar="false"
+        :scroll-top="commentScrollTop"
+        v-if="isOpenIm == 0"
+      >
+        <view id="commentContent">
+          <view v-for="(item, index) in liveMsgList" :key="item.id">
+            <text v-if="item.type == 1" class="join-text">{{
+              item.message
+            }}</text>
+            <view class="comment-item-group" v-else>
+              <image class="comment-avatar" :src="item.avatar"></image>
+              <text class="comment-title">{{ item.nick }}:</text>
+              <text class="comment-text">{{ item.message }}</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="live-interact-input-group" v-if="isOpenIm == 0">
+        <input
+          class="input-box"
+          @confirm="sendLiveMessage"
+          confirmType="send"
+          :inputBorder="false"
+          v-model="message"
+          placeholder="说点什么吧!"
+        />
+        <!-- <button class="send-btn">发送</button> -->
+      </view>
+    </view>
+    <!-- 直播介绍 -->
+    <view class="live-introduce-group" v-else>
+      {{ liveRoom.info }}
+    </view>
+
+    <view class="reward-group">
+      <view
+        class="reward-item-group"
+        @click="handlePop"
+        v-if="currentRedBag.type == 1 && !currentRedBag.isReceive"
+      >
+        <image
+          src="../../static/icon_live_red_ packet.png"
+          class="red-packet-image"
+          mode="aspectFit"
+        ></image>
+        <u-count-down
+          @change="onOvertimeChange"
+          :autoStart="false"
+          ref="countDown"
+          @finish="handleCountdownOver"
+          :time="countDownTime"
+          format="HH:mm:ss"
+        ></u-count-down>
+      </view>
+      <view
+        class="reward-item-group"
+        @click="handleQuestion"
+        v-if="questionRedBag.type == 2"
+      >
+        <image
+          src="../../static/icon_live_question.png"
+          class="red-packet-image"
+          mode="aspectFit"
+        ></image>
+        <text class="red-packet-time">答题</text>
+      </view>
+    </view>
+    <!-- <view class="pop">
+			<view class="hb-main">
+			</view>
+		</view> -->
+    <!-- <u-loading-page
+      :loading="isLoading"
+      loading-text="加载中，请稍候..."
+    ></u-loading-page> -->
+  </view>
+</template>
+<script>
+import rectiverewards from "./components/rectiverewards.nvue";
+import typePreview from "./components/type-preview.nvue";
+import hb from "./components/hb";
+import question from "./components/question";
+import { mapGetters } from "vuex";
+import { doQueryImSign, redenvelopReceive } from "../../api/user";
+import { doJoinLive, uploadData, illegalVocabulary } from "../../api/live";
+import TIM from "tim-wx-sdk";
+import topMenu from '@/components/live/top-menu.nvue'
+export default {
+  components: {
+    hb,
+    question,
+    rectiverewards,
+    typePreview,
+    topMenu
+  },
+  computed: {
+    ...mapGetters(["live"]),
+  },
+  data() {
+    return {
+      isCountdownStart: false,
+      isShowPlaybtn: false,
+      isShowTypePreview: false, // 是否显示题型预览弹窗
+      isVideoEnd: false, // 判断视频是否播放完成
+      isShowRectiverewards: false,
+      isShowQues: false,
+      isShowQuesModal: false, //是否答题弹窗
+      isShowPop: false,
+      isLoading: true, // 页面进入加载
+      liveUrl: "http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4",
+      fil: true,
+      videoHeight: "100%",
+      tabIndex: 0,
+      tabBars: [
+        {
+          name: "直播互动",
+          id: "liveInteract",
+        },
+        {
+          name: "直播介绍",
+          id: "liveIntroduce",
+        },
+      ],
+      message: "",
+      liveRoom: {},
+      liveUrls: [],
+      liveMsgList: [],
+      nickname: "",
+      avatar: "",
+      userId: 0,
+      isInit: false,
+      commentScrollTop: 0,
+      options: null,
+      isOpenIm: 0,
+      currOption: null,
+      currAnswer: "x",
+      currIndex: 0,
+      intervalId: null, //本页计时器ID
+      watchTime: 0, //累计观看时间（秒）
+      overTime: 0,
+      redPaketText: "",
+      getEnvelopeIndex: 0, //领红包得下标
+      viewRewardArray: [], //观看时长奖励
+      answerReward: null, //答题奖励
+      maxViewDuration: 0,
+      minViewDuration: 0,
+      currentViewReward: {}, // 当前红包
+      allRedBag: [],
+      currentRedBag: {},
+      questionRedBag: {},
+      countDownTime: 0, //倒计时时间
+      currentWatchTime: 0, // 当前观看时长
+      timer: null,
+      upTimer: null,
+      illegalVocabularyKeywords: [], // 非法词语
+    };
+  },
+  onReady() {},
+  onLoad(option) {
+    this.TimeUploadData();
+    this.timeToUploadData();
+    this.getLiveData();
+    this.nickname = getApp().globalData.userInfo.username;
+    this.avatar = getApp().globalData.userInfo.ico;
+    this.userId = getApp().globalData.userInfo.id;
+  },
+  created() {
+    this.isVideoEnd = false;
+  },
+  onShow() {
+    this.isVideoEnd = false;
+    console.log(this.isLoading)
+    if(this.isLoading == false){
+      this.getSystemInfoSync();
+    }
+  },
+  beforeDestroy(e) {
+    this.quitCensusTime();
+    this.stopInterval();
+    clearInterval(this.upTimer);
+  },
+  onHide() {
+    this.stopTimer();
+    clearInterval(this.upTimer);
+    this.handleSetStorage(this.currentWatchTime, this.liveRoom.id);
+    this.quitImGroup();
+  },
+  methods: {
+    onOvertimeChange() {
+      if (!this.isVideoEnd) this.$refs.countDown.start();
+    },
+    getSystemInfoSync() {
+      // 获取系统信息
+      let systemInfo = uni.getSystemInfoSync().osName;
+      console.log(systemInfo);
+      switch (systemInfo) {
+        case "android":
+          console.log("运行Android上");
+          this.isShowPlaybtn = true;
+          break;
+        case "ios":
+          console.log("运行iOS上");
+          this.autoPlayAudio();
+          break;
+        default:
+          console.log("运行在开发者工具上");
+          break;
+      }
+    },
+    // 视频在微信浏览器自动播放   安卓未测
+    autoPlayAudio() {
+      this.videoContext = uni.createVideoContext("livePlayer", this);
+      console.log(this.videoContext);
+      if (window.WeixinJSBridge) {
+        WeixinJSBridge.invoke(
+          "getNetworkType",
+          {},
+          (e) => {
+            this.videoContext.play();
+          },
+          false
+        );
+      } else {
+        document.addEventListener(
+          "WeixinJSBridgeReady",
+          () => {
+            WeixinJSBridge.invoke("getNetworkType", {}, (e) => {
+              this.videoContext.play();
+            });
+          },
+          false
+        );
+      }
+      this.videoContext.play();
+
+      return false;
+    },
+    illegalVocabularyHandler(mid) {
+      illegalVocabulary(mid)
+        .then((res) => {
+          console.log(res);
+          if (res.code == "R000" && res.data) {
+            this.illegalVocabularyKeywords = res.data.split(",");
+            console.log(this.illegalVocabularyKeywords);
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    TimeUploadData() {
+      console.log("数据上报");
+      uploadData(this.liveRoom.id)
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    timeToUploadData() {
+      this.upTimer = setInterval(() => {
+        this.TimeUploadData();
+      }, 3 * 60 * 1000);
+    },
+    //   关闭题型预览
+    handlePreClose() {
+      this.isShowTypePreview = false;
+    },
+
+    // 处理答题红包
+    handleQuestion() {
+      if (this.isVideoEnd) {
+        this.isShowQuesModal = true;
+      } else {
+        uni.showToast({
+          title: "观看完视频才能答题领红包，先看看题目吧",
+          icon: "none",
+          duration: 2000,
+        });
+        this.isShowTypePreview = true;
+      }
+    },
+    // 倒计时结束 自动弹出领取奖励
+    handleCountdownOver(e) {
+      if (Object.entries(this.currentRedBag).length > 0) {
+        if (this.currentRedBag.type == 1) {
+          this.handleSetStorage(this.currentWatchTime, this.liveRoom.id);
+          this.initCountDown(this.liveRoom, this.currentRedBag);
+          this.isShowPop = true;
+        }
+      }
+    },
+    showRectiverewards() {
+      this.isShowRectiverewards = true;
+    },
+    // 处理领取奖励完毕
+    handleOverRective(value) {
+      this.questionRedBag = {};
+      this.currentRedBag = {};
+      this.isShowRectiverewards = false;
+    },
+    // 处理关闭答题弹窗
+    handleQuesClose() {
+      this.isShowQues = false;
+    },
+    // 点击取消答题
+    cancelAns() {
+      this.isShowQuesModal = false;
+    },
+    // 点击确认答题
+    beginAns() {
+      this.isShowQuesModal = false;
+      this.isShowQues = true;
+    },
+    // 关闭红包弹窗
+    handlePopClose() {
+      this.isShowPop = false;
+    },
+    // 处理打开红包弹窗
+    handlePop(e) {
+      // this.$refs.countDown.reset();
+      this.handleSetStorage(this.currentWatchTime, this.liveRoom.id);
+      this.initCountDown(this.liveRoom, this.currentRedBag);
+      this.isShowPop = true;
+    },
+    // 处理缓存
+    handleSetStorage(value, planId) {
+      const key = "CENSUS_TIME_CACHEKEY_";
+      uni.setStorageSync(`${key}${planId}`, value);
+    },
+    // 初始化定时器时间
+    initCountDown(liveroom, currentRedBag) {
+      const key = "CENSUS_TIME_CACHEKEY_";
+      console.log(uni.getStorageSync(`${key}${liveroom.id}`));
+      this.currentWatchTime =
+        parseInt(uni.getStorageSync(`${key}${liveroom.id}`)) || 0;
+      this.countDownTime =
+        parseInt(
+          currentRedBag.viewLength * 60 * 1000 - this.currentWatchTime * 1000
+        ) > 0
+          ? parseInt(
+              currentRedBag.viewLength * 60 * 1000 -
+                this.currentWatchTime * 1000
+            )
+          : 0;
+      console.log(this.countDownTime);
+    },
+    // 初始化定时器
+    initTimer() {
+      this.timer = setInterval(() => {
+        this.currentWatchTime++;
+      }, 1000);
+    },
+    // 清除定时器
+    stopTimer() {
+      clearInterval(this.timer);
+    },
+
+    quitCensusTime() {
+      let censusTimeCacheKey = "CENSUS_TIME_CACHEKEY_";
+      uni.setStorageSync(
+        censusTimeCacheKey + this.currentViewReward.planId,
+        this.watchTime
+      );
+    },
+    // 获取直播间数据
+    getLiveData() {
+      this.isLoading = true;
+      doJoinLive(this.$Route.query.id)
+        .then((res) => {
+          console.log(res);
+          if (res.code == "R000" && res.data != undefined) {
+            this.liveRoom = res.data;
+            this.getSystemInfoSync();
+            this.illegalVocabularyHandler(res.data.mid);
+            uni.setNavigationBarTitle({
+              title: this.liveRoom.title,
+            });
+            // 获取所有未使用的红包
+            this.allRedBag = res.data.moneyBonuses.filter(
+              (res) => !res.isReceive
+            );
+            if (Object.entries(this.allRedBag).length > 0) {
+              // 当前的观看时长红包
+              this.currentRedBag =
+                this.allRedBag[0].type == 1
+                  ? Object.assign({}, this.allRedBag[0], {
+                      planId: this.liveRoom.id,
+                      rewardType: this.liveRoom.rewardType,
+                    })
+                  : {};
+              // 当前的答题红包
+              this.questionRedBag =
+                this.allRedBag[0].type == 2
+                  ? Object.assign({}, this.allRedBag[0], {
+                      topics: this.liveRoom.topics,
+                      planId: this.liveRoom.id,
+                      rewardType: this.liveRoom.rewardType,
+                    })
+                  : {};
+
+              if (this.currentRedBag.type == 1) {
+                this.initCountDown(this.liveRoom, this.currentRedBag);
+              }
+            }
+
+            this.isOpenIm = this.liveRoom.openIm;
+            //this.isOpenIm =0;
+            if (
+              this.isOpenIm == 0 ||
+              this.options == undefined ||
+              this.options.length == 0
+            ) {
+              this.imLogin(); //登录IM
+              this.joinImGroup();
+              this.listenLiveMessage();
+            }
+          } else if (res.code == "R100") {
+            uni.showToast({
+              title: res.msg,
+              icon: "error",
+              duration: 2000,
+            });
+            this.isLoading = false;
+          } else {
+            this.isLoading = false;
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          uni.showToast({
+            title: "系统错误，加载失败，请稍后再试",
+            icon: "error",
+            duration: 2000,
+          });
+          this.isLoading = false;
+        });
+    },
+    loadedmetadata(e) {
+      this.isLoading = false;
+      this.getSystemInfoSync()
+    },
+    getEnvelopeTimer() {
+      //观看时长领取奖励定时器
+      let that = this;
+      this.watchTime++;
+    },
+    imLogin() {
+      doQueryImSign().then((res) => {
+        if (res.code == "R000") {
+          uni.$TUIKit
+            .login({
+              userID: this.userId,
+              userSig: res.data,
+            })
+            .then((res) => {
+              console.info(
+                "-----------------login Data-------------------------"
+              );
+              console.log(res);
+              console.info(
+                "-----------------login Data-------------------------"
+              );
+              uni.$TUIKit.on(TIM.EVENT.SDK_READY, this.initUserInfo);
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        }
+      });
+    },
+    // 初始化账户信息
+    initUserInfo() {
+      let promise = uni.$TUIKit.updateMyProfile({
+        nick: this.nickname,
+        avatar: this.avatar,
+      });
+      promise
+        .then(function (imResponse) {
+          console.log(imResponse.data); // 更新资料成功
+        })
+        .catch(function (imError) {
+          console.warn("updateMyProfile error:", imError); // 更新资料失败的相关信息
+        });
+    },
+    doSelectedOption(option) {
+      this.currAnswer = option;
+      this.currOption.selected = this.currAnswer;
+      this.currOption.isRight = this.currAnswer == this.currOption.answer;
+      console.info(JSON.stringify(this.options));
+    },
+    doNextQustion() {
+      this.currAnswer = "x";
+      this.currIndex++;
+      this.currOption = this.options[this.currIndex];
+    },
+    doPreQustion() {
+      if (this.currIndex > 0) {
+        this.currIndex--;
+        this.currAnswer = "x";
+        this.currOption = this.options[this.currIndex];
+      }
+    },
+    joinImGroup() {
+      let that = this;
+      uni.$TUIKit
+        .joinGroup({
+          groupID: "redve-im-" + that.liveRoom.id,
+          type: TIM.TYPES.GRP_AVCHATROOM,
+        })
+        .then(function (imResponse) {
+          console.warn("joinGroup SUCCESS:", JSON.stringify(imResponse));
+          let joinMsg = {
+            id: that.userId,
+            nick: "系统通知",
+            type: 1,
+            message:
+              "欢迎【" +
+              that.nickname +
+              "】来到直播间，请您文明观看直播，若发布违法违规等不良信息，我们将对违规者进行封禁！",
+          };
+          that.liveMsgList.push(joinMsg);
+          switch (imResponse.data.status) {
+            case TIM.TYPES.JOIN_STATUS_WAIT_APPROVAL: // 等待管理员同意
+              break;
+            case TIM.TYPES.JOIN_STATUS_SUCCESS: // 加群成功
+              console.log(imResponse.data.group); // 加入的群组资料
+              break;
+            case TIM.TYPES.JOIN_STATUS_ALREADY_IN_GROUP: // 已经在群中
+              break;
+            default:
+              break;
+          }
+        })
+      
+        .catch(function (imError) {
+          console.warn("joinGroup error:", imError); // 申请加群失败的相关信息
+        });
+    },
+    quitImGroup() {
+      let promise = uni.$TUIKit.quitGroup("redve-im-" + this.liveRoom.id);
+      promise
+        .then(function (imResponse) {
+          console.log(imResponse.data.groupID); // 退出成功的群 ID
+        })
+        .catch(function (imError) {
+          console.warn("quitGroup error:", imError); // 退出群组失败的相关信息
+        });
+    },
+    sendLiveMessage() {
+      let that = this;
+      if (that.message == undefined || this.message == "") {
+        uni.showToast({
+          title: "请输入内容哦",
+          icon: "none",
+        });
+        return;
+      }
+      if (that.isOpenIm != 0) {
+        uni.showToast({
+          title: "评论已关闭",
+          icon: "none",
+        });
+        return;
+      }
+      // 发送群消息
+      let msg = uni.$TUIKit.createCustomMessage({
+        to: "redve-im-" + that.liveRoom.id,
+        conversationType: TIM.TYPES.CONV_GROUP,
+        payload: {
+          data: "text", // 用于标识该消息是骰子类型消息
+          description: this.message, // 获取骰子点数
+          extension: "",
+        },
+        // v2.18.0起支持群消息已读回执功能，如果您发消息需要已读回执，需购买旗舰版套餐，并且创建消息时将 needReadReceipt 设置为 true
+        needReadReceipt: false,
+      });
+      let currentMsg = msg.payload.description;
+      if (this.illegalVocabularyKeywords.includes(currentMsg)) {
+        let id = msg.ID;
+        let textMsg = {
+          id: id,
+          nick: that.nickname,
+          avatar: that.avatar,
+          type: 0,
+          message: currentMsg,
+        };
+        that.liveMsgList.push(textMsg);
+        that.message = undefined;
+        that.scrollByBottom();
+      } else {
+        let promise = uni.$TUIKit.sendMessage(msg);
+        promise
+          .then(function (imResponse) {
+            // 发送成功
+            // console.log("=======>send success " + JSON.stringify(imResponse));
+            let id = imResponse.data.message.ID;
+            let textMsg = {
+              id: id,
+              nick: that.nickname,
+              avatar: that.avatar,
+              type: 0,
+              message: that.message,
+            };
+            that.liveMsgList.push(textMsg);
+            that.message = undefined;
+            that.scrollByBottom();
+          })
+          .catch(function (imError) {
+            // 发送失败
+            console.warn("sendMessage error:", imError);
+          });
+      }
+    },
+    listenLiveMessage() {
+      let that = this;
+      uni.$TUIKit.on(TIM.EVENT.MESSAGE_RECEIVED, function (event) {
+        // 收到推送的单聊、群聊、群提示、群系统通知的新消息，可通过遍历 event.data 获取消息列表数据并渲染到页面
+        // event.name - TIM.EVENT.MESSAGE_RECEIVED
+        // event.data - 存储 Message 对象的数组 - [Message]
+        // console.info("=======MESSAGE_RECEIVED======");
+        // console.info("=======MESSAGE_RECEIVED======" + JSON.stringify(event.data));
+        let msgs = event.data;
+        msgs.forEach((item, index) => {
+          let payload = item.payload;
+          let id = item.ID;
+          let message = payload.description;
+          // message: payload.description
+          if (message != undefined && message != "") {
+            let textMsg = {
+              id: id,
+              nick: item.nick,
+              avatar: item.avatar,
+              type: 0,
+              message: message,
+            };
+            that.liveMsgList.push(textMsg);
+            that.scrollByBottom();
+          }
+        });
+        that.isInit = true;
+      });
+    },
+    scrollByBottom() {
+      let that = this;
+      setTimeout(function () {
+        that.scrollToBottom();
+      }, 100);
+    },
+    scrollToBottom() {
+      let query = uni.createSelectorQuery().in(this);
+      query.select("#commentContainer").boundingClientRect();
+      query.select("#commentContent").boundingClientRect();
+      query.exec((res) => {
+        //如果子元素高度大于父元素高度(显示高度)
+        if (res[1].height > res[0].height) {
+          //计算出二者差值就是需要滚动的距离
+          this.commentScrollTop = res[1].height - res[0].height;
+        }
+      });
+    },
+    startInterval() {
+      let that = this;
+      this.intervalId = setInterval(() => {
+        that.getEnvelopeTimer();
+      }, 1000);
+    },
+    stopInterval() {
+      clearInterval(this.intervalId);
+    },
+    
+
+    onstart(e) {
+      console.log('开始播放中');
+      this.isLoading = false;
+      if (this.currentRedBag.type == 1) {
+        this.$refs.countDown.start();
+        this.initTimer();
+        this.isCountdownStart = true;
+      }
+    },
+    onpause(e) {
+      console.log('暂停播放');
+    },
+    onfinish(e) {
+      if (this.currentRedBag.type == 1) {
+        this.handleSetStorage(this.currentWatchTime, this.liveRoom.id);
+        this.stopTimer();
+        this.isCountdownStart = false;
+        this.$refs.countDown.pause();
+        clearInterval(this.upTimer);
+        this.isVideoEnd = true;
+      }
+      if (this.questionRedBag.type == 2) {
+        if (Object.entries(this.questionRedBag).length > 0) {
+          this.isShowQuesModal = true;
+        } else {
+          uni.showToast({
+            icon: "none",
+            title: "当前视频红包已经领完",
+          });
+        }
+      }
+    },
+    onfail(e) {
+      console.log('视频播放出错');
+      
+      console.log(e);
+    },
+    progress(e){
+      
+    },
+    waiting(e) {
+      console.log('视频缓冲中');
+      console.log(e)
+      this.isLoading = true
+    },
+    timeupdate(e) {
+      // console.log(e)
+    },
+
+    play() {
+      this.context.play();
+    },
+    pause() {
+      this.context.pause();
+    },
+
+    stop() {
+      this.context.stop();
+    },
+
+    ontabtap(e) {
+      let index = e.target.dataset.current || e.currentTarget.dataset.current;
+      if (this.tabIndex === index) {
+        return;
+      }
+      this.tabIndex = index;
+    },
+  },
+};
+</script>
+
+<style lang="scss" scoped>
+.u-popup {
+  flex: 0;
+}
+.page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  max-height: 100%;
+}
+.ques {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  .ques-main {
+    width: 600rpx;
+    padding: 20rpx;
+    background-color: #fff;
+  }
+}
+.video {
+  width: 100%;
+  height: 421rpx;
+  flex: 0 0 421rpx;
+  justify-content: center;
+  align-items: center;
+}
+
+.tabs {
+  width: 100%;
+  height: 80rpx;
+  display: flex;
+  flex-direction: row;
+}
+.u-loading-icon{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-left: -36rpx;
+  margin-top: -36rpx;
+}
+.uni-tab-item {
+  width: 50%;
+  align-items: center;
+  justify-content: center;
+}
+
+.uni-tab-item-title {
+  color: #555;
+  font-size: 30rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  border-bottom-width: 1px;
+  border-bottom-color: #fa192c;
+  width: 100%;
+  text-align: center;
+}
+
+.uni-tab-item-title-active {
+  color: #ffffff;
+  background-color: #fa192c;
+}
+
+.live-interact-group {
+  width: 100%;
+  padding-bottom: 20rpx;
+  flex-direction: column;
+  height: calc(100% - 501rpx);
+  flex: 0 1 calc(100% - 501rpx);
+}
+
+.comment-group {
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+  width: 100%;
+  height: 85%;
+  flex-direction: column;
+  display: flex;
+  margin-top: 20rpx;
+}
+
+.question-group {
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+  width: 100%;
+  height: 85%;
+  flex-direction: column;
+  display: flex;
+  margin-top: 20rpx;
+}
+
+.question-head-group {
+  width: 100%;
+  height: 100rpx;
+  align-items: center;
+  flex-direction: row;
+  display: flex;
+  border-bottom-color: #979797;
+  border-bottom-width: 1rpx;
+}
+
+.question-option {
+  width: 100%;
+  margin-top: 30rpx;
+  align-items: center;
+  flex-direction: column;
+  display: flex;
+}
+
+.option-title {
+  width: 100%;
+  height: 40rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+  color: #323232;
+  line-height: 40rpx;
+}
+
+.option-group {
+  flex-direction: row;
+  display: flex;
+  height: 90rpx;
+  align-items: center;
+  width: 100%;
+}
+
+.option-selected {
+  width: 48rpx;
+  height: 48rpx;
+}
+
+.option-text {
+  font-size: 32rpx;
+  margin-left: 20rpx;
+  color: #323232;
+}
+
+.option-text-active {
+  font-size: 32rpx;
+  margin-left: 20rpx;
+  color: #448ef1;
+}
+
+.cancel-answer {
+  width: 28%;
+  color: #a6a6a6;
+  font-size: 32rpx;
+  text-align: center;
+  padding-top: 16rpx;
+  padding-bottom: 16rpx;
+
+  border-radius: 51rpx;
+  border: 2rpx solid #bababa;
+}
+
+.pre-question {
+  width: 28%;
+
+  font-size: 32rpx;
+  padding-top: 16rpx;
+  padding-bottom: 16rpx;
+  text-align: center;
+  color: #448ef1;
+  margin-left: 30rpx;
+  margin-right: 30rpx;
+  border-radius: 51rpx;
+  border: 2rpx solid #448ef1;
+}
+
+.next-question {
+  width: 28%;
+  padding-top: 16rpx;
+  padding-bottom: 16rpx;
+  font-size: 32rpx;
+  text-align: center;
+  color: #ffffff;
+  border-radius: 51rpx;
+  background-color: #448ef1;
+}
+
+.question-head-title {
+  font-size: 32rpx;
+  color: #448ef1;
+}
+
+.question-error {
+  color: #eb2e3c;
+}
+
+.question-right {
+  color: #448ef1;
+}
+
+.question-total {
+  font-size: 32rpx;
+  color: #323232;
+  position: absolute;
+  right: 30rpx;
+}
+
+.join-text {
+  font-size: 32rpx;
+  padding-left: 20rpx;
+  padding-right: 20rpx;
+  color: #9ca3af;
+  font-weight: 200;
+}
+
+.comment-item-group {
+  flex-direction: row;
+  margin-top: 4rpx;
+  align-items: center;
+  margin-bottom: 4rpx;
+}
+
+.comment-avatar {
+  width: 60rpx;
+  border-radius: 30rpx;
+  border-width: 1rpx;
+  margin-right: 10rpx;
+  border-color: #eeeeee;
+  height: 60rpx;
+}
+
+.comment-title {
+  font-weight: bold;
+  color: #fa192c;
+  margin-right: 4rpx;
+  font-size: 32rpx;
+}
+
+.comment-text {
+  color: #666666;
+  font-size: 32rpx;
+}
+
+.live-interact-input-group {
+  width: 100%;
+  position: absolute;
+  bottom: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  display: flex;
+  padding: 0 20rpx;
+}
+
+.question-btn-group {
+  width: 100%;
+  position: absolute;
+  bottom: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.input-box {
+  width: 100%;
+  padding: 0 15px;
+  height: 40px;
+  margin-right: 10rpx;
+  background-color: #f8f8f8;
+  border-radius: 30px;
+  font-size: 28rpx;
+}
+
+.send-btn {
+  width: 20%;
+  border-radius: 20px;
+  font-size: 28rpx;
+  color: #ffffff;
+  background-color: #fa192c;
+}
+
+.live-introduce-group {
+  width: 100%;
+  flex-direction: column;
+  height: 40%;
+  bottom: 2px;
+  padding: 20rpx;
+}
+
+.reward-group {
+  flex-direction: column;
+  display: flex;
+  position: absolute;
+  bottom: 200rpx;
+  right: 0rpx;
+}
+
+.reward-item-group {
+  width: 160rpx;
+  align-items: center;
+  height: 160rpx;
+  flex-direction: column;
+  display: flex;
+}
+
+.red-packet-image {
+  width: 100%;
+  height: 100%;
+}
+
+.red-packet-time {
+  color: #ffffff;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 20rpx;
+  position: absolute;
+  padding-left: 10rpx;
+  font-size: 13rpx;
+  padding-right: 10rpx;
+  bottom: 20rpx;
+}
+</style>

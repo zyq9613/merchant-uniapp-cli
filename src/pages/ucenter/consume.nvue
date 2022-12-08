@@ -1,0 +1,138 @@
+<template>
+	<view class="page">
+		 <u-tabs :list="list" @click="tabChange"></u-tabs>
+		 <u-loading-icon :show="showLoading"></u-loading-icon>
+		 <view class="list">
+			 <view class="item" v-for="item in dataList">
+				 <view class="clor-gray line">
+				 	领取时间: {{item.createTime}}
+				 </view>
+				 <view class="row line">
+					 <view>{{item.title}}</view>
+				 	
+					<view class="createTime">
+						 {{item.cost}}积分
+					</view>
+				 </view>
+				 <view class="row line">
+					 <view class="createTime">
+					 	商户: {{item.pname}}
+					 </view>
+				 </view>
+				 
+			 </view>
+		 	
+		 </view>
+		 <view class="no-data" v-if="!dataList || dataList.length == 0" >
+			 <image src="@/static/usercenter/empty.png" mode="heightFix" class="img"></image>
+			 <view >暂无数据</view>
+		 </view>
+	</view>
+</template>
+<script>
+	import {
+		Api
+	} from "@/api/api";
+	import {doRecordList} from '@/api/u-center.js'
+	export default {
+		data() {
+			return {
+				queryParams: {
+					 
+				},
+				type:2,   // 2 视频计划  1直播计划
+				rewardType:2,  // 1 红包  2积分
+				pageSize:10,
+				pageNo:1,
+				pageCount:0,
+				showLoading:true,
+				 list: [{
+						name: '视频计划',
+						type:2
+					}, {
+						name: '直播计划',
+						type:1
+					},
+				],
+				dataList:[]
+			}
+		},
+		created() {
+			this.getList()
+		},
+		onReachBottom() {
+			if(this.queryParams.pageNo>=this.pageCount)	return
+			this.queryParams.pageNo++
+			this.getList()
+		},
+		methods: {
+			tabChange(e){
+				console.log(e)
+				// this.queryParams.rewardType = rewardType
+				this.dataList = [];
+				this.type = e.type;
+				this.getList()
+			},
+			getList(){
+				this.showLoading = true
+				doRecordList(this.type,this.rewardType).then(res=>{
+					console.log(res)
+					this.showLoading = false
+				   if (res.code == "R000") {
+						this.dataList = res.data.datas
+						this.showLoading = false
+						this.pageCount = res.data.pageCount
+					}
+				})
+			}
+		}
+	}
+</script>
+<style lang="scss">
+	uni-page-body {
+		height: 100%;
+	
+	}
+	.no-data{
+		align-items: center;
+	}
+	.page {
+		display: flex;
+		align-items: center;
+		background-color: #F1F1F1;
+		height: 100%;
+		.list{
+			width: 100%;
+			padding: 20rpx;
+			.item{
+				padding:0 20rpx;
+				width: 100%;
+				background-color: #fff;
+				border-radius: 12rpx;
+				margin-bottom: 40rpx;
+				.clor-gray{
+					color: #CCC;
+				}
+			}
+		}
+		.img {
+			height: 400rpx;
+			margin-bottom: 30rpx;
+		}
+		.row{
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			
+		}
+		.line{
+			margin: 14rpx 0;
+		}
+
+		
+
+		
+
+	
+	}
+</style>

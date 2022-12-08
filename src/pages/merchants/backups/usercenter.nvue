@@ -1,0 +1,520 @@
+<template>
+	<div>
+		
+		<view class="top">
+			<image class="top-background-color" src="../../static/usercenter/centerbg.png"></image>
+			<text class="top-title">个人中心</text>
+			<view class="top-main">
+				<view class="left">
+					<image :src="userInfo.ico" class="headimg"></image>
+					<view>
+						<text>{{userInfo.username}}</text>
+						<text>账户：{{userInfo.accCode}}</text>
+					</view>
+				</view>
+				
+			</view>
+			<view class="top-data">
+				<view class="top-data-item">
+					<text>88.8</text>
+					<text>余额</text>
+				</view>
+				<view class="top-data-item">
+					<text>10W</text>
+					<text>红包总金额</text>
+				</view>
+			</view>
+		</view>
+		<view class="main">
+			<view class="item">
+				<view class="item-top">
+					<view class="item-data">
+						<text>{{userAccount.money}}</text>
+						<view>
+							<text>余额</text>
+							<u-button type="error" size="mini" text="充值"></u-button>
+						</view>
+					</view>
+					<view class="item-data">
+						<text>{{userAccount.totalRed}}</text>
+						<view>
+							<text>红包</text>
+						</view>
+					</view>
+					<view class="item-data">
+						<text>{{userAccount.totalconsume}}</text>
+						<view>
+							<text>积分</text>
+						</view>
+					</view>
+				</view>
+				<view class="item-bom">
+					<view>
+						<image src="../../static/usercenter/icon-03.png" mode=""></image>
+						<text>充值记录 ></text>
+					</view>
+					<my-link to="/pages/merchants/hbrecord">
+						<view>
+							<image src="../../static/usercenter/icon-01.png" mode=""></image>
+							<text>红包记录 ></text>
+						</view>
+					</my-link>
+					<view>
+						<image src="../../static/usercenter/icon-02.png" mode=""></image>
+						<text>积分记录 ></text>
+					</view>
+				</view>
+			</view>
+			<view class="dropdown">
+				<u-collapse :border="false">
+					<u-collapse-item :border="false" title="分享推广">
+						<view class="qrcode-wrap">
+							<text>分享链接：{{shareLink}}</text>
+							<view>
+								<u-button type="success" size="small" @click="copy" text="复制链接"></u-button>
+								<!-- <u-button type="error" size="small" @click="shareToWechat" text="点击分享"></u-button> -->
+							</view>
+						</view>
+					</u-collapse-item>
+				</u-collapse>
+			</view>
+			<view class="list-item">
+				<u-cell-group :border="false" v-for="(item,index) in tabList" :key="index">
+					<my-link :to="item.link"><u-cell :isLink="true" :border="false" :name="item.name" :title="item.title"></u-cell></my-link>
+				</u-cell-group>
+			</view>
+			
+			<view class="list-item">
+				<my-link to="/pages/merchants/usermanagement">
+					<u-cell-group :border="false">
+						<u-cell :isLink="true" :border="false" title="会员管理"></u-cell>
+					</u-cell-group>
+				</my-link>
+				
+			</view>
+			
+			<view class="list-item">
+				<u-cell-group :border="false">
+					<u-cell :isLink="true" :border="false" title="会员领红包记录"></u-cell>
+				</u-cell-group>
+			</view>
+			
+			<view class="list-item">
+				<u-cell-group :border="false">
+					<u-cell :isLink="true" :border="false" title="设置"></u-cell>
+				</u-cell-group>
+			</view>
+		</view>
+		
+		<u-tabbar
+			:value="1"
+			:fixed="true"
+			:placeholder="false"
+			:safeAreaInsetBottom="true"
+			inactiveColor="#000"
+			activeColor="#FD5449"
+		>
+			<u-tabbar-item v-for="(item,index) in tabbarList" :key="index" :text="item.text" :icon="item.icon" @click="swichTab" ></u-tabbar-item>
+		</u-tabbar>
+		<u-loading-page :loading="isLoading" loadingText="加载中"></u-loading-page>
+	</div>
+</template>
+
+<script>
+	import Wechat from 'jweixin-module';
+	import { mapGetters } from 'vuex'
+	import {
+			doQueryWechatSignature,
+			doQueryAccount
+		} from "../../api/user";
+	export default{
+		name:'usercenter',
+		data(){
+			return{
+				isLoading:false,
+				userAccount:{},
+				shareLink:'1',
+				userInfo:{},
+				tabList:[
+					{
+						name:'planset',
+						title:'计划设置',
+						link:'/pages/merchants/planset'
+					},
+					{
+						name:'planlist',
+						title:'计划列表',
+						link:'/pages/merchants/planlist'
+					},
+					{
+						name:'plandata',
+						title:'数据统计',
+						link:'/pages/merchants/plandata'
+					},
+					{
+						name:'question',
+						title:'问卷调查出题',
+						link:'/pages/merchants/question'
+					},
+				]
+			}
+		},
+		onReady() {
+			this.isLoading = true;
+		},
+		onLoad() {
+			this.userInfo = getApp().globalData.userInfo;
+			console.log(this.userInfo)
+			this.getUserInfo();
+			this.doGetWechatSignature();
+			
+		},
+		computed: {
+			...mapGetters([
+				'tabbarList',
+			])
+		},
+		methods:{
+			swichTo(e){
+				console.log(e)
+				// this.$Router.pushTab('/pages/merchants/hbrecord')
+			},
+			shareToWechat(){
+				this.doGetWechatSignature(init => {
+					Wechat.ready(() => {
+						// TODO  
+						console.info("================Wechat ready");
+						Wechat.updateAppMessageShareData({
+							title: '测试微信分享', // 分享标题
+							desc: '测试微信分享', // 分享描述
+							link: this.shareLink, // 分享链接，该链接域名或路径必须与当前页面对应的公众号 JS 安全域名一致
+							imgUrl: `${this.$baseUrl}1.jpg`, // 分享图标
+							success: function(res) {
+								// 设置成功
+								console.log('-----------------------------------')
+							}
+						});
+						Wechat.updateTimelineShareData({
+							title: '测试微信分享', // 分享标题
+							desc: '测试微信分享', // 分享描述
+							link: this.shareLink, // 分享链接，该链接域名或路径必须与当前页面对应的公众号 JS 安全域名一致
+							imgUrl: `${this.$baseUrl}1.jpg`, // 分享图标
+							success: function(res) {
+								// 设置成功
+					
+							}
+						});
+					});
+				})
+				
+				Wechat.error((res) => {
+					// config信息验证失败会执行 error 函数，如签名过期导致验证失败，具体错误信息可以打开 config 的debug模式查看，也可以在返回的 res 参数中查看，对于 SPA 可以在这里更新签名。
+					console.info("====error===>" + JSON.stringify(res));
+				});
+			},
+			// initWechat(nonceStr, timestamp, signature) {
+			// 	Wechat.config({
+			// 		debug: false, // 开启调试模式,调用的所有 api 的返回值会在客户端 alert 出来，若要查看传入的参数，可以在 pc 端打开，参数信息会通过 log 打出，仅在 pc 端时才会打印。
+			// 		appId: 'wx5097ef3c53eeb967', // 必填，公众号的唯一标识
+			// 		timestamp: timestamp, // 必填，生成签名的时间戳
+			// 		nonceStr: nonceStr, // 必填，生成签名的随机串
+			// 		signature: signature, // 必填，签名
+			// 		jsApiList: ['updateTimelineShareData', 'updateAppMessageShareData'] // 必填，需要使用的 JS 接口列表
+			// 	});
+			// },
+			doGetWechatSignature(callback) {
+				let redirect_uri = window.location.href.split("#")[0];
+				doQueryWechatSignature(redirect_uri)
+					.then(result => {
+						if (result.code == 'R000' && result.data != undefined) {
+							// let timestamp = result.data.timestamp;
+							// let signature = result.data.signature;
+							// let nonceStr = result.data.nonceStr;
+							// this.initWechat(nonceStr, timestamp, signature);
+							Wechat.config({
+								debug: false, // 开启调试模式,调用的所有 api 的返回值会在客户端 alert 出来，若要查看传入的参数，可以在 pc 端打开，参数信息会通过 log 打出，仅在 pc 端时才会打印。
+								appId: 'wx5097ef3c53eeb967', // 必填，公众号的唯一标识
+								timestamp: result.data.timestamp, // 必填，生成签名的时间戳
+								nonceStr: result.data.nonceStr, // 必填，生成签名的随机串
+								signature: result.data.signature, // 必填，签名
+								jsApiList: ['updateTimelineShareData', 'updateAppMessageShareData'] // 必填，需要使用的 JS 接口列表
+							});
+							if (typeof callback === 'function') {
+								callback(result.data)
+							}
+						}
+					})
+					.catch(error => {
+						console.log(error);
+					});
+			},
+			
+			// 点击复制
+			copy(){
+				uni.setClipboardData({
+					data:this.shareLink,
+					success: () => {
+						uni.showToast({
+							title:'复制链接成功'
+						})
+					}
+				})
+			},
+			getUserInfo(){
+				let redirect_uri = window.location.href.split("#")[0].indexOf('?') == -1 ? window.location.href.split("#")[0] : window.location.href.split("#")[0].split('?')[0]
+				doQueryAccount()
+				.then(result => {
+					if (result.code == 'R000' && result.data != undefined) {
+						this.userAccount = result.data;
+						this.shareLink = `${redirect_uri}?shareCode=${result.data.shareCode}#/pages/login/wechat`;
+						this.isLoading = false;
+					}else{
+						uni.showToast({
+							title:'请求错误，请联系管理员',
+							type:'error'
+						})
+						this.isLoading = false;
+					}
+				})
+				.catch(error => {
+					console.log(error);
+					this.isLoading = false;
+				});
+			},
+			//获取分享链接
+			getShareLink(){
+				
+			},
+			swichTab(e){
+				console.log(this.tabbarList[e].pagePath)
+				this.$Router.pushTab('/' + this.tabbarList[e].pagePath)
+			},
+			routeTo(e){
+				console.log(e)
+				this.$Router.pushTab('/pages/merchants/' + e.name);
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	page{
+		background: #f4f4f4;
+		}
+	.top{
+		height: 566rpx;
+		width: 100%;
+		position: relative;
+		>image{
+			width: 750rpx;
+			height: 566rpx;
+			position: absolute;
+		}
+		.top-title{
+			text-align: center;
+			font-size: 32rpx;
+			padding-top: 24rpx;
+			color: #fff;
+			padding-bottom: 46rpx;;
+		}
+		.top-data{
+			margin-top: 40rpx;
+			flex-direction: row;
+			justify-content: space-between;
+			.top-data-item{
+				align-items: center;
+				flex:0 1 50%;
+				border-right: 2rpx solid rgba(255, 255, 255, .7);
+				&:last-child{
+					border: none;
+				}
+				text{
+					font-size: 26rpx;
+					line-height: 40rpx;
+					color: #fff;
+					&:nth-child(1){
+						font-size: 40rpx;
+						margin-bottom: 16rpx;
+						font-weight: bold;
+					}
+				}
+			}
+		}
+		.top-main{
+			flex-direction:row;
+			justify-content: space-between;
+			align-items: center;
+			padding: 0 52rpx;
+			
+			.left{
+				image{
+					width: 88rpx;
+					height: 88rpx;
+					margin-right: 32rpx;
+				}
+				flex-direction:row;
+				justify-content: space-between;
+				align-items: end;
+				view{
+					text{
+						font-size: 28rpx;
+						color: #fff;
+						margin-top: 4rpx;
+						line-height: 40rpx;
+					}
+				}
+			}
+			.right{
+				flex-direction: row;
+				align-items: center;
+				>image{
+					width: 20rpx;
+					height: 20rpx;
+					margin-left: 30rpx;
+				}
+				view{
+					margin-left: 24rpx;
+					align-items: center;
+					image{
+						width: 60rpx;
+						height: 60rpx;
+					}
+					text{
+						font-size: 24rpx;
+						color: #fff;
+						line-height: 40rpx;;
+					}
+				}
+			}
+			
+		}
+	}
+	.headimg{
+		border-radius: 50%;
+	}
+	.main{
+		width: 710rpx;
+		margin: 0 auto;
+		// top: -75px;
+		.item{
+			background-color: #fff;
+			border-radius: 6px;
+			.item-top{
+				width: 100%;
+				flex-direction: row;
+				padding-bottom: 20rpx;
+				border-bottom: 3rpx solid #f4f4f4;
+				>view{
+					padding-top: 34rpx;
+					flex: 1 1 33.333%;
+					align-items: center;
+					position: relative;
+					&:after{
+						content: "";
+						width: 2rpx;
+						height: 68rpx;
+						position: absolute;
+						right: 0;
+						top: 50%;
+						margin-top: -34rpx;
+						background-color: rgba(151, 151, 151, .23);
+					}
+					>text{
+						font-size: 40rpx;
+						line-height: 40rpx;
+						color: #555;
+						margin-bottom: 16rpx;
+					}
+					view{
+						flex-direction: row;
+						align-items: center;
+						
+						text{
+							font-size: 26rpx;
+							color: #555;
+							line-height: 40rpx;
+							margin: 0 5rpx;
+						}
+						.u-button--error{
+							width: 78rpx;
+							height: 32rpx;
+							min-width: 78rpx;
+							border-radius: 16rpx;
+							margin: 0 5rpx;
+						}
+					}
+				}
+			}
+			.item-bom{
+				flex-direction: row;
+				view{
+					flex:1;
+					flex-direction: row;
+					justify-content: center;
+					align-items: center;
+					padding: 24rpx 0;
+					position: relative;
+					&:after{
+						content: "";
+						width: 2rpx;
+						height: 26rpx;
+						position: absolute;
+						right: 0;
+						top: 50%;
+						margin-top: -13rpx;
+						background-color: rgba(151, 151, 151, .23);
+					}
+					&:nth-child(3){
+						&:after{
+							display: none;
+						}
+					}
+					image{
+						width: 40rpx;
+						height: 40rpx;
+						margin: 0 5rpx;
+					}
+					text{
+						font-size: 28rpx;
+						line-height: 40rpx;
+						color: #555;
+						margin: 0 5rpx;
+					}
+				}
+			}
+		}
+	}
+	.dropdown{
+		width: 100%;
+		margin: 20rpx auto;
+		border-radius: 12rpx;
+		background-color: #fff;
+		.u-collapse-item{
+			background-color: #fff;
+		}
+		.qrcode-wrap{
+			width: 100%;
+			align-items: center;
+			>view{
+				flex-direction: row;
+				align-items: center;
+				margin: 22rpx 44rpx 0;
+				image{
+					width: 170rpx;
+					height: 170rpx;
+				}
+				.u-button{
+					margin: 0 80rpx;
+					color: #fff;
+				}
+			}
+		}
+	}
+	.list-item{
+		width: 100%;
+		margin: 0 auto 20rpx;
+		background-color: #fff;
+		border-radius: 12rpx;
+		overflow: hidden;
+	}
+</style>

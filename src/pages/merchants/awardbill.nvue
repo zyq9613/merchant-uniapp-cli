@@ -1,0 +1,138 @@
+<template>
+	<view>
+		 <view class="content">
+			 <z-paging ref="paging" v-model="dataList" @query="queryList">
+				 <u-tabs lineColor="#f56c6c" slot="top" :list="tabbarList" @click="changeTab"></u-tabs>
+				 <view class="item" v-for="(item,index) in dataList" :key="item.id">
+					 
+					 <image :src="item.ico" mode="" class="head-img"></image>
+					 <view class="item-wrap">
+						<view class="">
+							<text>{{item.title}}</text>
+							<text>{{item.rewardType == 1 ? `${item.cost/100}元` : `${item.cost}积分`}}</text>
+						</view>
+						<view class="">
+							<text>{{item.uid}}</text>
+							<text>{{item.uname}}</text>
+						</view>
+						<text class="time">{{item.createTime}}</text>
+					 </view>
+					
+				 </view>
+			 </z-paging>
+		 </view>
+	</view>
+</template>
+
+<script>
+	import {doRecordList} from '@/api/u-center'
+	export default {
+		data(){
+			return{
+				dataList:[],
+				tabbarList:[
+					{
+						name:'红包奖励流水',
+						type:2,
+						rewardType:1
+					},
+					{
+						name:'积分奖励流水',
+						type:2,
+						rewardType:2
+					}
+				],
+				query:{
+					type:2,
+					rewardType:1
+				}
+			}
+		},
+		methods: {
+			queryList(pageNo, pageSize) {
+				let {type,rewardType} = this.query;
+				//这里的pageNo和pageSize会自动计算好，直接传给服务器即可
+				//这里的请求只是演示，请替换成自己的项目的网络请求，并在网络请求回调中通过this.$refs.paging.complete(请求回来的数组)将请求结果传给z-paging
+				doRecordList(type,rewardType,pageNo,pageSize).then(res => {
+					//请勿在网络请求回调中给dataList赋值！！只需要调用complete就可以了
+					this.$refs.paging.complete(res.data.datas);
+				}).catch(res => {
+					//如果请求失败写this.$refs.paging.complete(false)，会自动展示错误页面
+					//注意，每次都需要在catch中写这句话很麻烦，z-paging提供了方案可以全局统一处理
+					//在底层的网络请求抛出异常时，写uni.$emit('z-paging-error-emit');即可
+					this.$refs.paging.complete(false);
+				})
+			},
+			changeTab(e){
+				this.query = {
+					type:e.type,
+					rewardType:e.rewardType
+				};
+				this.$refs.paging.reload();
+			}
+		},
+	}
+</script>
+
+<style lang="scss" scoped>
+	.u-tabs{
+		width: 710rpx;
+		margin: 20rpx auto 0;
+	}
+	page{
+		background-color: #f4f4f4;
+	}
+	.item{
+		width: 710rpx;
+		margin: 20rpx auto 20rpx;
+		border-radius: 14rpx;
+		background-color: #fff;
+		box-shadow: 0 0 10rpx 1rpx rgba($color: #000000, $alpha: 0.5);
+		padding: 20rpx;
+		flex-direction: row;
+		// justify-content: space-between;
+		align-items: center;
+		>image{
+			width: 120rpx;
+			height: 120rpx;
+			border-radius: 50%;
+		}
+		.item-wrap{
+			flex: 1;
+			margin-left: 30rpx;
+			view:nth-child(1){
+				flex-direction: row;
+				justify-content: space-between;
+				flex: 1;
+				text{
+					font-size: 30rpx;
+					color: #000;
+					&:nth-child(2){
+						color: #FD5449;
+					}
+				}
+			}
+			view:nth-child(2){
+				flex-direction: row;
+				flex: 1;
+				margin: 8rpx 0;
+				align-items: center;
+				text{
+					font-size: 28rpx;
+					color: #333;
+					&:nth-child(2){
+						margin-left: 20rpx;
+					}
+				}
+			}
+			>text{
+				color: #323232;
+				font-size: 28rpx;
+				opacity: 0.4;
+			}
+		}
+	}
+	
+		
+	
+</style>

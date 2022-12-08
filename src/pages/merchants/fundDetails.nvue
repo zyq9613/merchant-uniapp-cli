@@ -1,0 +1,154 @@
+<template>
+	<view class="content">
+		<z-paging ref="paging" v-model="dataList" @query="queryList">
+			<u-tabs lineColor="#f56c6c" slot="top" :list="tabbarList" @change="changeTab"></u-tabs>
+			<view class="item" v-for="(item,index) in dataList" :key="item.id">
+				
+				<image v-if="item.type == 0" src="@/static/icon1.png" mode=""></image>
+				<image v-else src="@/static/icon3.png" mode=""></image>
+				<view class="item-wrap">
+				   <view class="">
+					   <text>{{item.info}}</text>
+					   <text>{{item.money | toPsyt}}元</text>
+				   </view>
+				   
+				   <text class="time">{{item.createtime}}</text>
+				</view>
+			   
+			</view>
+		</z-paging>
+	</view>
+</template>
+
+<script>
+	import moment from "@/utils/moment/index.js"
+	import { funddetails } from'@/api/merchant.js'
+	export default{
+		name:'fundDetails',
+		data(){
+			return {
+				tabbarList:[
+					{
+						name:'充值记录',
+						type:0
+					},
+					{
+						name:'发红包记录',
+						type:1
+					}
+				],
+				dataList: [],
+				query: {
+					type:0
+				},
+			}
+		},
+		onLoad() {
+		},
+		onReachBottom() {
+		},
+		methods:{
+			queryList(pageNo, pageSize){
+				this.query = {pageNo,pageSize,...this.query}
+				//这里的pageNo和pageSize会自动计算好，直接传给服务器即可
+				//这里的请求只是演示，请替换成自己的项目的网络请求，并在网络请求回调中通过this.$refs.paging.complete(请求回来的数组)将请求结果传给z-paging
+				funddetails(this.query).then(res => {
+					console.log(res)
+					//请勿在网络请求回调中给dataList赋值！！只需要调用complete就可以了
+					this.$refs.paging.complete(res.data.data.datas);
+				}).catch(res => {
+					//如果请求失败写this.$refs.paging.complete(false)，会自动展示错误页面
+					//注意，每次都需要在catch中写这句话很麻烦，z-paging提供了方案可以全局统一处理
+					//在底层的网络请求抛出异常时，写uni.$emit('z-paging-error-emit');即可
+					this.$refs.paging.complete(false);
+				})
+			},
+			
+			changeTab(e){
+				this.query.type = e.type;
+				this.$refs.paging.reload();
+			}
+		},
+		filters: {
+		    toPsyt(num) {
+			 if(num) {
+				 if(isNaN(num)){ 
+				  return ""
+				}
+				num = typeof num === 'string' ? parseFloat(num) : num  // 判断是否是字符串如果是字符串转成数字
+				num = num.toFixed(2)  // 保留两位
+				num = num.toLocaleString() // 转成金额显示模式
+				// 解决数字小于1时，IE只显示小数点后部分的问题
+				if (num.substring(0, 1) === '') {
+				   num = '0' + num
+				}
+				//判断是否有小数
+				if(num.indexOf('.') === -1){
+				   num = num + '.00'
+				}else {
+				   num = num.split('.')[1].length < 2 ? num + '0' : num
+				}
+				return num // 返回的是字符串23,245.12保留2位小数
+				} else if (num === 0) {
+				  num = num + '.00'
+				  return num
+				}else {
+				 return (num = null)
+				}
+			}
+		}
+		
+	}
+</script>
+
+<style lang="scss" scoped>
+page{
+	background-color: #f4f4f4;
+}
+.content{
+	width: 100%;
+	.u-tabs{
+		width: 710rpx;
+		margin: 20rpx auto 0;
+	}
+}
+.item{
+	margin-top: 20rpx;
+	width: 710rpx;
+	margin: 20rpx auto 20rpx;
+	border-radius: 14rpx;
+	background-color: #fff;
+	padding: 20rpx;
+	flex-direction: row;
+	box-shadow: 0 0 10rpx 1rpx rgba($color: #000000, $alpha: 0.5);
+	// justify-content: space-between;
+	align-items: center;
+	>image{
+		width: 120rpx;
+		height: 120rpx;
+		border-radius: 50%;
+	}
+	.item-wrap{
+		flex: 1;
+		margin-left: 30rpx;
+		view:nth-child(1){
+			flex-direction: row;
+			justify-content: space-between;
+			flex: 1;
+			text{
+				font-size: 30rpx;
+				color: #000;
+				&:nth-child(2){
+					color: #FD5449;
+				}
+			}
+		}
+		>text{
+			color: #323232;
+			font-size: 28rpx;
+			opacity: 0.4;
+			margin-top: 20rpx;
+		}
+	}
+}
+</style>

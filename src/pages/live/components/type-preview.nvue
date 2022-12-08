@@ -1,0 +1,101 @@
+<template>
+	<div class="wrap">
+		<view class="pre">
+			<view class="pre-top">
+				<text>题型预览</text>
+				<u-icon @click="handleClose" name="close" color="#333" :size="20"></u-icon>
+			</view>
+			<view class="pre-main">
+				<view class="pre-list" v-for="(item,index) in liveRoom.topics" :key="index">
+					<text><text>问题{{index+1}}:</text>{{item.title}}？</text>
+					<view>
+						<text>A:{{item.a}}</text>
+						<text>B:{{item.b}}</text>
+						<text>C:{{item.c}}</text>
+						<text>D:{{item.d}}</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+	</div>
+</template>
+
+<script>
+	export default {
+		props: {
+			liveRoom: {
+				type: Object,
+			},
+		},
+		methods:{
+			handleClose(){
+				this.$emit('isClose')
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	.wrap{
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, .6);
+		left: 0;
+		top: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		z-index: 10000;
+		.pre{
+			width: 690rpx;
+			padding: 25rpx;
+			background-color: #fff;
+			border-radius: 20rpx;
+			.pre-top{
+				position: relative;
+				justify-content: center;
+				flex-direction: row;
+				padding-bottom: 20rpx;
+				border-bottom: 2rpx solid rgba(151, 151, 151, 0.2);
+				text{
+					font-size: 32rpx;
+					color: #EB2E3C;
+					
+				}
+				.u-icon{
+					position: absolute;
+					right: 0;
+					top: 0;
+				}
+			}
+			.pre-main{
+				padding: 0 9rpx;
+				.pre-list{
+					padding: 22rpx 0; 
+					border-bottom: 2rpx solid rgba(151, 151, 151, 0.2);
+					&:last-child{
+						border: none;
+					}
+					text{
+						font-size: 24rpx;
+						color: #323232;
+						text{
+							color: #448EF1;
+						}
+					}
+					view{
+						margin-top: 10rpx;
+						flex-flow: row wrap;
+						text{
+							width: 50%;
+							margin: 14rpx 0;
+						}
+					}
+				}
+			}
+		}
+	}
+</style>

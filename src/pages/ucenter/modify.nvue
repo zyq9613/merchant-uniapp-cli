@@ -1,0 +1,218 @@
+<template>
+	<view class="page">
+
+		<view class="modify-group">
+			<input class="modify-input" v-model="modifyContent" placeholder="输入修改内容" />
+			<image class="modify-clear" src="../../static/icon_clear.png" v-if="showClear" @click="onClear"></image>
+		</view>
+		<button class="send-btn"  v-if="canBinding"  @click="toModify" :loading="isLoading">提交</button> 
+	</view>
+</template>
+
+<script>
+	import {
+		doMidifyNick,
+		doMidifyPhone
+	} from "../../api/user";
+	export default {
+		data() {
+			return {
+				userInfo: {},
+				modifyContent: '',
+				type: 0,
+				title: '',
+                isLoading:false
+			}
+		},
+
+		computed: {
+			showClear() {
+				return this.modifyContent != undefined && this.modifyContent != '';
+			},
+            canBinding() {
+                let allowLogin =  this.isPhone;  
+                return allowLogin; 
+			},
+			
+			isPhone() {
+                if(this.type == 0){
+                    return this.modifyContent?true:false
+                }else{
+                    
+                    return /^1\d{10}$/.test(this.modifyContent);
+                }
+				
+			},
+		},
+
+		onReady() {
+
+		},
+		onLoad(options) {
+            const that = this;
+			this.userInfo = getApp().globalData.userInfo;
+			this.type = options.type;
+			this.title = options.title;
+			console.log(options)
+			this.modifyContent = options.value != 'undefined' ? options.value : '';
+            if(this.type == 0){
+                uni.setNavigationBarTitle({
+                    title: that.title
+                });
+	
+            }else{
+                uni.setNavigationBarTitle({
+                    title: that.title
+                });
+            }
+		},
+
+		methods: {
+			onClear() {
+				this.modifyContent = undefined;
+			},
+			toModify() {
+                this.isLoading = true
+				if (this.type == 0) {
+                    
+					this.toModifyNick();
+				} else {
+					this.toModifyPhone();
+				}
+			},
+
+			toModifyNick() {
+				doMidifyNick(this.modifyContent)
+					.then(result => {
+						if (result.code == 'R000') {
+							getApp().globalData.userInfo.username = this.modifyContent;
+							getApp().saveUserInfo(getApp().globalData.userInfo);
+                            setTimeout(function(){
+                                this.isLoading = false
+                                uni.navigateTo({
+                                    url: '/pages/ucenter/udetail'
+                                })
+                            },300)
+						}
+					})
+					.catch(error => {
+						console.log(error);
+					});
+			},
+			toModifyPhone() {
+				doMidifyPhone(this.modifyContent)
+					.then(result => {
+						if (result.code == 'R000') {
+							getApp().globalData.userInfo.accCode = this.modifyContent;
+							getApp().saveUserInfo(getApp().globalData.userInfo);
+                            setTimeout(function(){
+                                this.isLoading = false
+                                uni.navigateTo({
+                                    url: '/pages/ucenter/udetail'
+                                })
+                            },300)
+						}
+						
+					})
+					.catch(error => {
+						console.log(error);
+					});
+			},
+
+
+
+		}
+	}
+</script>
+
+<style>
+	.page {
+		flex-direction: column;
+		display: flex;
+		align-items: center;
+		position: absolute;
+		background-color: #F8F8F8;
+		width: 100%;
+		height: 100%;
+	}
+
+	.head-group {
+		height: 80rpx;
+		width: 100%;
+		align-items: center;
+		justify-content: center;
+		background-color: #ffffff;
+	}
+    .send-btn {
+		width: 80%;
+		margin-top: 60rpx;
+		border-radius: 20rpx;
+		border-width: 1rpx;
+		border-color: #04BE02;
+		font-size: 32rpx;
+		text-align: center;
+		color: #ffffff;
+		padding: 4rpx;
+		background-color: #FD5449;
+	}
+
+	.head-confirm {
+		color: #ffffff;
+
+		padding-left: 30rpx;
+		padding-right: 30rpx;
+		width: 80%;
+
+		align-items: center;
+		justify-content: center;
+		font-size: 32;
+		margin-top: 120rpx;
+		text-align: center;
+		background-color: #FD5449;
+		border-radius: 12px;
+	}
+
+	..head-confirm[disabled] {
+
+		opacity: 0.4;
+		background-color: #FD5449;
+	}
+
+	.head-back {
+		width: 40rpx;
+		height: 40rpx;
+		left: 30rpx;
+		position: absolute;
+	}
+
+	.head-title {
+		height: 40rpx;
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #323232;
+	}
+
+	.modify-group {
+		height: 100rpx;
+		width: 100%;
+		flex-direction: row;
+		display: flex;
+		align-items: center;
+		background-color: #ffffff;
+		margin-top: 30rpx;
+	}
+
+	.modify-input {
+		color: #323232;
+		width: 95%;
+		padding-left: 30rpx;
+		font-size: 30rpx;
+		height: 100%;
+	}
+
+	.modify-clear {
+		width: 30rpx;
+		height: 30rpx;
+		margin-right: 30rpx;
+	}
+</style>

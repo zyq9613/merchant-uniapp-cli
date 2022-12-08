@@ -1,0 +1,214 @@
+<template>
+	<view>
+		<view class="recharge-item">
+			<text>账户余额</text>
+			<text class="text1">{{money | toPsyt}}</text>
+		</view>
+
+		<view class="recharge-item">
+			<text>请输入充值金额（元）</text>
+			<view class="wrap">
+				<u--input clearable border="none" v-model="rechargeAmount"  type="number" placeholder="单笔充值最低1元"></u--input>
+				<!-- <u-icon name="close-circle" color="rgba(216,216,216,.5)" size="28"></u-icon> -->
+			</view>
+			
+		</view>
+		<view class="tips">
+			<text>温馨提示</text>
+			<text class="text1">单笔最低充值1元，最高无上限</text>
+			<text class="text1">如需帮助请联系客服</text>
+		</view>
+		<u-button  type="error" @click="handlePay" shape="circle" text="下一步"></u-button>
+		<recharge-success :rechargeAmount="rechargeAmount" v-if="isRechargeSuccess"></recharge-success>
+	</view>
+</template>
+
+<script>
+	import { handleWechatPay,doQueryAccount, doQueryWechatSignature } from "../../api/user";
+	import rechargeSuccess from './components/recharge-success.nvue'
+	import Wechat from 'jweixin-module';
+	export default {
+		components:{
+			rechargeSuccess
+		},
+		data() {
+			return {
+				rechargeAmount:null,
+				isRechargeSuccess:false,
+				money:0,
+			}
+		},
+		onReady() {
+			this.doGetWechatSignature();
+			this.getAmount();
+		},
+		methods: {
+			getAmount(){
+				doQueryAccount().then(res => {
+					if(res.code == 'R000'){
+						this.money = res.data.money
+					}
+				})
+			},
+			doGetWechatSignature(callback) {
+				let redirect_uri = window.location.href.split("#")[0];
+				let that = this
+				doQueryWechatSignature(redirect_uri)
+					.then(result => {
+						console.log(result)
+						if (result.code == 'R000' && result.data != undefined) {
+							Wechat.config({
+								debug: false, // 开启调试模式,调用的所有 api 的返回值会在客户端 alert 出来，若要查看传入的参数，可以在 pc 端打开，参数信息会通过 log 打出，仅在 pc 端时才会打印。
+								appId: that.$appId, // 必填，公众号的唯一标识
+								timestamp: result.data.timestamp, // 必填，生成签名的时间戳
+								nonceStr: result.data.nonceStr, // 必填，生成签名的随机串
+								signature: result.data.signature, // 必填，签名
+								jsApiList: ['chooseWXPay'] // 必填，需要使用的 JS 接口列表
+							});
+							if (typeof callback === 'function') {
+								callback(result.data)
+							}
+						}
+					})
+					.catch(error => {
+						console.log(error);
+					});
+			},
+			// 处理微信支付（
+			handlePay(){
+				let that= this;
+				if(!this.rechargeAmount){
+					uni.showToast({
+						icon:'none',
+						title:'请输入充值金额'
+					})
+				}else{
+					this.isPayLoading = true;
+					handleWechatPay(this.rechargeAmount*100).then(res => {
+						console.log(res)
+						
+						if (res.code == 'R000' && res.data != undefined){
+							Wechat.chooseWXPay({
+							  timestamp: res.data.timeStamp, // 支付签名时间戳，注意微信 jssdk 中的所有使用 timestamp 字段均为小写。但最新版的支付后台生成签名使用的 timeStamp 字段名需大写其中的 S 字符
+							  nonceStr: res.data.nonceStr, // 支付签名随机串，不长于 32 位
+							  package: res.data.packageValue, // 统一支付接口返回的prepay_id参数值，提交格式如：prepay_id=\*\*\*）
+							  signType: res.data.signType, // 微信支付V3的传入 RSA ,微信支付V2的传入格式与V2统一下单的签名格式保持一致
+							  paySign: res.data.paySign, // 支付签名
+							  success:  (res) => {
+							    // 支付成功后的回调函数
+								console.log(that.rechargeAmount)
+								debugger
+								that.isRechargeSuccess = true;
+								that.rechargeAmount = null;
+							  },
+							  cancel: (res) => {
+								that.rechargeAmount = null;
+								uni.showToast({
+								   title:'已经取消支付',
+								   icon:'none'
+								})
+							  },
+							  fail:(res) => {
+									that.rechargeAmount = null;
+									uni.showToast({
+										title:'支付失败',
+										icon:'none'
+									})
+								}
+							  
+							});
+						}
+					}).catch(error => {
+						console.log(error)
+					})
+				}
+			},
+		},
+		filters: {
+			toPsyt(num) {
+			 if(num) {
+				 if(isNaN(num)){ 
+				  return ""
+				}
+				num = typeof num === 'string' ? parseFloat(num) : num  // 判断是否是字符串如果是字符串转成数字
+				num = num.toFixed(2)  // 保留两位
+				num = num.toLocaleString() // 转成金额显示模式
+				// 解决数字小于1时，IE只显示小数点后部分的问题
+				if (num.substring(0, 1) === '') {
+				   num = '0' + num
+				}
+				//判断是否有小数
+				if(num.indexOf('.') === -1){
+				   num = num + '.00'
+				}else {
+				   num = num.split('.')[1].length < 2 ? num + '0' : num
+				}
+				return num // 返回的是字符串23,245.12保留2位小数
+				} else if (num === 0) {
+				  num = num + '.00'
+				  return num
+				}else {
+				 return (num = null)
+				}
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	.u-button{
+		width: 690rpx;
+		margin: 200rpx auto 0;
+	}
+	.recharge-item{
+		padding-left: 44rpx;
+		padding-top: 48rpx;
+		border-bottom: 2rpx solid #F5F5F5;
+		padding-bottom: 58rpx;
+		text{
+			font-size: 30rpx;
+			color: #333;
+		}
+		.text1,.wrap{
+			margin-left: 40rpx;
+			font-size: 50rpx;
+			margin-top: 52rpx;
+			font-weight: bold;
+		}
+		.wrap{
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			margin-right: 34rpx;
+		}
+		
+	}
+	.tips{
+		margin-top: 44rpx;
+		padding-left: 34rpx;
+		text{
+			font-size: 30rpx;
+			line-height: 42rpx;
+			color:#676767;
+			margin-bottom: 16rpx;
+		}
+		.text1{
+			font-size: 26rpx;
+			color: #89898A;
+			line-height: 36rpx;
+			position: relative;
+			padding-left: 24rpx;
+			&:after{
+				content: '';
+				width: 12rpx;
+				height: 12rpx;
+				background-color: #89898A;
+				position: absolute;
+				left: 0;
+				top: 50%;
+				margin-top: -6rpx;
+				border-radius: 50%;
+			}
+		}
+	}
+</style>

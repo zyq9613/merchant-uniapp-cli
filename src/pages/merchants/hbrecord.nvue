@@ -1,0 +1,185 @@
+<template>
+	<div>
+		<view>
+			<view class="record-item" v-for="(item,index) in recordListData" :key="item+index">
+				<view class="record-top">
+					<view class="left">
+						<text>{{new Date(item[0].createTime).getFullYear() + '-' + (new Date(item[0].createTime).getMonth() + 1)}}</text>
+						<image src="../../static/record/2.png" mode=""></image>
+					</view>
+					<view class="right">
+						<text>转出 ￥{{item[0].totolCost}}</text>
+					</view>
+				</view>
+				<view class="record-main">
+					<view class="record-list" v-for="(item1,index1) in item" :key="item1+index1">
+						<image src="../../static/record/1.png" mode=""></image>
+						<view class="record-data">
+							<view class="record-data-left">
+								<text>{{item1.title}}</text>
+								<text>{{item1.createTime}}</text>
+							</view>
+							<text>-{{item1.cost}}.00</text>
+						</view>
+					</view>
+				</view>
+			</view>
+			
+			
+		</view>
+		<u-empty
+			v-if="recordListData.length == 0"
+			mode="data"
+			text="暂无红包流水"
+		>
+		</u-empty>
+	</div>
+	
+</template>
+
+<script>
+	import { doRecordList } from "../../api/record";
+	export default {
+		data() {
+			return {
+				recordListData:[],
+			}
+		},
+		onLoad() {
+			this.getRecordList()
+		},
+		methods: {
+			getRecordList(){
+				doRecordList().then(res => {
+					console.log(res)
+					if(res.code == "R000" && res.data != undefined){
+						console.log(res)
+						this.handleArrar(res.data.datas,'createTime',[]);
+						
+						if(this.recordListData && this.recordListData.length > 0){
+							let totolCost = 0;
+							this.recordListData.forEach(item => {
+								item.forEach(item1 => {
+									if(item1['cost']){
+										totolCost += item1['cost'];
+									}
+								})
+								console.log(item)
+								item[0].totolCost = totolCost;
+							})
+						}
+						console.log(this.recordListData)
+					}
+				})
+				.catch(error => {
+					console.log(error)
+				})
+			},
+			// 递归处理数据
+			handleArrar(list,name,resArr){
+				let sameGroupArr = [];
+				let filterName = ''
+				if(list && list.length > 0){
+					let tempList = []
+					filterName = `${new Date(list[0][`${name}`]).getFullYear()}-${new Date(list[0][`${name}`]).getMonth()+1}`;
+					console.log(filterName)
+					list.forEach((item,index) => {
+						if(item[`${name}`].indexOf(filterName) != -1){
+							sameGroupArr.push(item)
+						}else{
+							tempList.push(item)
+						}
+					})
+					resArr.push(sameGroupArr);
+					list = tempList;
+					this.handleArrar(list,name,resArr);
+				}else{
+					this.recordListData = resArr;
+					console.log(this.recordListData)
+				}
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	page{
+		background-color: #f4f4f4;
+	}
+	.record-item{
+		width: 710rpx;
+		margin: 0 auto ;
+		.record-top{
+			height: 80rpx;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			.left{
+				flex-direction: row;
+				align-items: center;
+				text{
+					font-size: 26rpx;
+					color: #323232;
+					
+				}
+				image{
+					width: 12rpx;
+					height: 12rpx;
+					margin-left: 6rpx;
+				}
+			}
+			.right{
+				flex-direction: row;
+				text{
+					font-size: 24rpx;
+					color: #323232;
+					margin-left: 22rpx;
+				}
+			}
+		}
+	}
+	.record-main{
+		width: 100%;
+		background-color: #fff;
+		border-radius: 20rpx;
+		.record-list{
+			padding: 0 30rpx;
+			height: 148rpx;
+			flex-direction: row;
+			align-items: center;
+			>image{
+				width: 52rpx;
+				height: 52rpx;
+			}
+			.record-data{
+				flex:1;
+				flex-direction: row;
+				justify-content: space-between;
+				height: 100%;
+				align-items: center;
+				border-bottom: 1px solid rgba(151, 151, 151, 0.1);
+				>text{
+					font-size: 26rpx;
+				}
+				&-left{
+					margin-left: 16rpx;
+					font-size: 26rpx;
+					color: #000;
+					line-height: 40rpx;
+					text{
+						&:nth-child(2){
+							margin-top: 12rpx;
+							opacity: 0.4;
+						}
+					}
+				}
+			}
+		}
+	}
+	.u-empty{
+		margin: 50rpx auto !important;
+		image{
+			width: 300rpx;
+		}
+	}
+</style>

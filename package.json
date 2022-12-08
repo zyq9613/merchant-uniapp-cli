@@ -51,7 +51,7 @@
     "@dcloudio/uni-app": "^2.0.1-alpha-36820221027001",
     "@dcloudio/uni-app-plus": "^2.0.1-alpha-36820221027001",
     "@dcloudio/uni-h5": "^2.0.1-alpha-36820221027001",
-    "@dcloudio/uni-helper-json": "*",
+    "@dcloudio/uni-helper-json": "^1.0.13",
     "@dcloudio/uni-i18n": "^2.0.1-alpha-36820221027001",
     "@dcloudio/uni-mp-360": "^2.0.1-alpha-36820221027001",
     "@dcloudio/uni-mp-alipay": "^2.0.1-alpha-36820221027001",
@@ -68,12 +68,21 @@
     "@dcloudio/uni-quickapp-webview": "^2.0.1-alpha-36820221027001",
     "@dcloudio/uni-stacktracey": "^2.0.1-alpha-36820221027001",
     "@dcloudio/uni-stat": "^2.0.1-alpha-36820221027001",
+    "@dcloudio/uni-ui": "^1.4.23",
     "@vue/shared": "^3.0.0",
     "core-js": "^3.6.5",
     "flyio": "^0.6.2",
+    "html2canvas": "^1.4.1",
+    "jweixin-module": "^1.6.0",
     "regenerator-runtime": "^0.12.1",
+    "tim-wx-sdk": "^2.24.0",
+    "uni-read-pages": "^1.0.5",
+    "uni-simple-router": "^1.5.5",
+    "uview-ui": "^2.0.31",
     "vue": "^2.6.11",
-    "vuex": "^3.2.0"
+    "vue-qr": "^4.0.9",
+    "vuex": "^3.2.0",
+    "z-paging": "^2.4.9"
   },
   "devDependencies": {
     "@babel/runtime": "~7.17.9",
@@ -91,6 +100,7 @@
     "@vue/cli-plugin-babel": "~4.5.13",
     "@vue/cli-service": "~4.5.13",
     "babel-plugin-import": "^1.11.0",
+    "compression-webpack-plugin": "^6.1.1",
     "cross-env": "^7.0.2",
     "jest": "^25.4.0",
     "mini-types": "*",
@@ -98,7 +108,8 @@
     "postcss-comment": "^2.0.0",
     "sass": "^1.49.8",
     "sass-loader": "^8.0.2",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.11",
+    "webpack-bundle-analyzer": "^4.7.0"
   },
   "browserslist": [
     "Android >= 4.4",

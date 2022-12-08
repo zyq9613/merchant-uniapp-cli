@@ -1,0 +1,107 @@
+<template>
+	<view class="page">
+		<u-search placeholder="日照香炉生紫烟" v-model="keyword"></u-search>
+		<sideBar :userInfo="userInfo"></sideBar>
+		<u-tabbar
+			:value="currentIndex"
+			:fixed="true"
+			:placeholder="false"
+			:safeAreaInsetBottom="true"
+			inactiveColor="#000"
+			activeColor="#FD5449"
+		>
+			<u-tabbar-item v-for="(item,index) in tabbarList" :key="index" :text="item.text" :icon="item.icon" @click="swichTab" ></u-tabbar-item>
+		</u-tabbar>
+	
+	</view>
+</template>
+<script>
+import sideBar from '@/components/consume/sideBar'
+	
+	import { mapGetters } from 'vuex'
+	export default {
+		data() {
+			return {
+				currentIndex:0,
+				login: false,
+				avatarUrl: '/static/logo.png',
+				userInfo: {},
+				gender: 0
+			}
+		},
+
+		components:{
+			sideBar
+		},
+		computed: {
+			...mapGetters([
+				'tabbarList',
+				'userInfo'
+			]),
+			
+		},
+		onReady() {
+			this.currentIndex = this.roleType && this.roleType > 11 ? 1 : 0
+		},
+		onLoad() {
+			this.userInfo = getApp().globalData.userInfo;
+			if (this.userInfo.sex == undefined) {
+				this.gender = 0;
+			} else {
+				this.gender = this.userInfo.sex;
+			}
+			console.info("====>userInfo:" + JSON.stringify(this.userInfo))
+		},
+		methods: {
+			swichTab(e){
+				this.$Router.pushTab('/' + this.tabbarList[e].pagePath)
+			},
+			modifyAvatar() {
+				uni.chooseImage({
+					count: 6, //默认9
+					sizeType: ['original', 'compressed'], //可以指定是原图还是压缩图，默认二者都有
+					sourceType: ['album'], //从相册选择
+					success: function(res) {
+						console.log(JSON.stringify(res.tempFilePaths));
+					}
+				});
+			},
+			toModify(type) {
+				let title;
+				let value;
+				if (type == 0) {
+					title = "修改昵称";
+					value = this.userInfo.username;
+				} else {
+					title = "修改手机号";
+					value = this.userInfo.accCode;
+				}
+				uni.navigateTo({
+					url: '/pages/ucenter/modify?type=' + type + '&title=' + title + '&value=' + value
+				});
+			},
+			toGender() {
+				uni.navigateTo({
+					url: '/pages/ucenter/gender'
+				});
+			},
+		}
+	}
+</script>
+<style lang="scss">
+	uni-page-body {
+		height: 100%;
+	}
+	page{
+		height: 100%;
+	}
+	.page{
+		height: 100%;
+		flex-direction: column;
+		.u-search{
+			flex: none;
+			margin: 20rpx !important;
+		}
+	}
+	
+</style>

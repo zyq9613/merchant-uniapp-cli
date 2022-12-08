@@ -1,0 +1,104 @@
+<template>
+	<view class="wrap">
+		<view class="hb">
+			<image src="../../../static/live/bg-01.png" mode=""></image>
+			<view class="is-state">
+				<text>恭喜你获得</text>
+				<view class="const">
+					<text v-if="liveRoom.rewardType == 1">￥</text>
+					<text class="active">{{liveRoom.rewardType == 1 ? liveRoom.cost/100 : liveRoom.cost}}</text>
+					<text  v-if="liveRoom.rewardType == 2">积分</text>
+				</view>
+				<text>可用于下单抵扣</text>
+				<button @click="handleOverRective">继续领取</button>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+	import { redenvelopReceive } from '../../../api/live.js'
+	export default {
+		props: {
+			liveRoom: {
+				type: Object,
+			},
+		},
+		created() {
+			console.log(this.liveRoom)
+		},
+		methods:{
+			handleOverRective(){
+			this.$emit('overRective',false)
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	.wrap{
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, .6);
+		left: 0;
+		top: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		z-index: 10000;
+		.hb{
+			width: 100%;
+			height: 900rpx;
+			>image{
+				position: absolute;
+				width: 100%;
+				height: 900rpx;
+				top: 0;
+				left: 0;
+			}
+			.is-state{
+				padding-top: 240rpx;
+				align-items: center;
+				>text{
+					font-size: 36rpx;
+					color: #D55656;
+					font-weight: bold;
+					&:nth-child(3){
+						font-weight: normal;
+						margin-top: 10rpx;
+					}
+				}
+				view{
+					flex-direction: row;
+					margin-left: -10rpx;
+					justify-content: center;
+					margin-top: 10rpx;
+					align-items: baseline;
+					text{
+						margin: 0 5rpx;
+						font-size: 36rpx;
+						font-weight: bold;
+						color:#D55656;
+						
+						&.active{
+							font-size: 72rpx;
+						}
+					}
+				}
+				button{
+					margin-top: 120rpx;
+					width: 270rpx;
+					height: 70rpx;
+					line-height: 70rpx;
+					text-align: center;
+					font-size: 36rpx;
+					color: #FA4240;
+					background-image: linear-gradient(#FCF5DD,#F3C77A);
+				}
+			}
+			
+		}
+	}
+</style>
